@@ -13,8 +13,17 @@ const fs = require('fs');
 const path = require('path');
 
 async function initDatabase() {
+  // Replace sslmode=require with verify-full to silence the deprecation warning
+  let connectionString = process.env.DATABASE_URL;
+  if (process.env.NODE_ENV === 'production' && connectionString) {
+    connectionString = connectionString.replace(
+      /sslmode=(require|prefer|verify-ca)/,
+      'sslmode=verify-full'
+    );
+  }
+
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     ssl:
       process.env.NODE_ENV === 'production'
         ? { rejectUnauthorized: true }
