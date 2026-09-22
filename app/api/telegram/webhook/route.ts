@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     console.log("✅ Welcome message sent!");
 
     // TEMPORARY: Test mode - skip payments and generate agent code immediately
-    const TEST_MODE = false; // DISABLED - Using real NOWPayments now
+    const TEST_MODE = true; // ENABLED - NOWPayments account not fully configured
 
     if (TEST_MODE) {
       console.log("🧪 TEST MODE: Generating agent code without payment");
