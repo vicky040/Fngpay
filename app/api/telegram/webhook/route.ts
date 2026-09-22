@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     console.log("✅ Welcome message sent!");
 
     // TEMPORARY: Test mode - skip payments and generate agent code immediately
-    const TEST_MODE = true; // Set to false when NOWPayments is working
+    const TEST_MODE = false; // DISABLED - Using real NOWPayments now
 
     if (TEST_MODE) {
       console.log("🧪 TEST MODE: Generating agent code without payment");
@@ -129,6 +129,7 @@ export async function POST(request: Request) {
     console.log("💳 Creating payment with NOWPayments...");
     console.log("Order ID:", orderId);
     console.log("Amount:", ONBOARDING_FEE_USDT, "USDT");
+    console.log("IPN Callback:", `${origin}/api/telegram/payment-webhook`);
 
     let payment;
     try {
@@ -139,16 +140,19 @@ export async function POST(request: Request) {
         orderDescription: "Fngpay P2P — partner panel onboarding fee",
         ipnCallbackUrl: `${origin}/api/telegram/payment-webhook`,
       });
-      console.log("✅ Payment created successfully:", payment.payment_id);
+      console.log("✅ Payment created successfully!");
+      console.log("Payment ID:", payment.payment_id);
+      console.log("Pay Address:", payment.pay_address);
+      console.log("Pay Amount:", payment.pay_amount);
     } catch (err) {
       console.error("❌ NOWPayments createPayment failed:", err);
-      console.error("Error details:", JSON.stringify(err, null, 2));
 
-      // Send detailed error to user (temporary for debugging)
       const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error("Error message:", errorMsg);
+
       await sendTelegramMessage(
         chatId,
-        `⚠️ Payment creation failed.\n\nError: ${errorMsg}\n\nThis is a sandbox test error. Checking configuration...`
+        "Sorry, couldn't generate a payment address right now. Please contact support or try again in a minute."
       );
       return NextResponse.json({ ok: true });
     }

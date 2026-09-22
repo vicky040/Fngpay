@@ -1,9 +1,9 @@
 import { createHmac } from "crypto";
 
-// TEMPORARY: Hardcoded NOWPayments credentials for testing
-const HARDCODED_API_KEY = "S464KP4-3J6MZN9-MB361R6-ACERHJS";
+// TEMPORARY: Hardcoded NOWPayments credentials - PRODUCTION MODE
+const HARDCODED_API_KEY = "EW6XXB8-00Y4P9R-PF5WFJQ-R6QZ8MQ";
 const HARDCODED_IPN_SECRET = "BqF/1wxKjG87kV4y1nj4pnqSIjjgK4YN";
-const HARDCODED_SANDBOX = true; // Set to false for production
+const HARDCODED_SANDBOX = false; // PRODUCTION MODE - Real payments!
 
 // https://api.nowpayments.io (production) / https://api-sandbox.nowpayments.io
 // (sandbox — separate account, separate API key, no real funds move).
@@ -41,27 +41,43 @@ export async function createPayment(params: {
   ipnCallbackUrl: string;
 }): Promise<CreatePaymentResult> {
   const apiKey = process.env.NOWPAYMENTS_API_KEY || HARDCODED_API_KEY;
+
+  console.log("🔧 NOWPayments API Configuration:");
+  console.log("  Base URL:", BASE_URL);
+  console.log("  API Key:", apiKey.substring(0, 15) + "...");
+  console.log("  Sandbox Mode:", HARDCODED_SANDBOX);
+
+  const requestBody = {
+    price_amount: params.priceAmount,
+    price_currency: params.priceCurrency,
+    pay_currency: USDT_TRC20,
+    order_id: params.orderId,
+    order_description: params.orderDescription,
+    ipn_callback_url: params.ipnCallbackUrl,
+  };
+
+  console.log("📤 Request body:", JSON.stringify(requestBody, null, 2));
+
   const res = await fetch(`${BASE_URL}/payment`, {
     method: "POST",
     headers: {
       "x-api-key": apiKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      price_amount: params.priceAmount,
-      price_currency: params.priceCurrency,
-      pay_currency: USDT_TRC20,
-      order_id: params.orderId,
-      order_description: params.orderDescription,
-      ipn_callback_url: params.ipnCallbackUrl,
-    }),
+    body: JSON.stringify(requestBody),
   });
+
+  console.log("📥 Response status:", res.status);
 
   if (!res.ok) {
     const text = await res.text();
+    console.error("❌ Error response:", text);
     throw new Error(`NOWPayments createPayment failed: ${res.status} ${text}`);
   }
-  return res.json();
+
+  const result = await res.json();
+  console.log("✅ Success response:", JSON.stringify(result, null, 2));
+  return result;
 }
 
 export async function getPaymentStatus(paymentId: string): Promise<CreatePaymentResult> {
