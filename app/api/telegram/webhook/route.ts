@@ -23,6 +23,7 @@ Sending your payment address now — I'll message you the moment it's confirmed.
 // swallowed rather than surfaced as error statuses (a non-2xx just makes
 // Telegram retry the same update later, which would re-send the welcome
 // text / re-create a payment for someone who already has one pending).
+// Updated: 2026-09-22
 export async function POST(request: Request) {
   if (!verifyTelegramSecret(request)) {
     return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
