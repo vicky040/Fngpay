@@ -51,8 +51,18 @@ function SidebarContent({ agent, wallet, onNavigate }: { agent: ShellAgent; wall
   return (
     <div className="sb-preview" style={{ width: 288, height: "100%", overflowY: "auto" }}>
       <div className="row-brand" role={onNavigate ? "button" : undefined} onClick={onNavigate} style={onNavigate ? { cursor: "pointer" } : undefined}>
-        <div className="brand-mark">PV</div>
-        <div className="brand-name">Fngpay</div>
+        <div className="brand-mark" style={{
+          background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)"
+        }}>FN</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          <div className="brand-name" style={{ fontSize: 16, fontWeight: 700, letterSpacing: "0.02em" }}>
+            FNG<span style={{ color: "#10B981" }}>PAY</span>
+          </div>
+          <div style={{ fontSize: 8, color: "#9CA3AF", marginTop: -2, letterSpacing: "0.08em" }}>
+            P2P PARTNER PANEL
+          </div>
+        </div>
       </div>
 
       <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,.08)" }}>

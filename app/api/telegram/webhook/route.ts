@@ -5,18 +5,45 @@ import { sendTelegramMessage, sendTelegramPhoto, verifyTelegramSecret, isTelegra
 import { createPayment, isNowPaymentsConfigured } from "@/lib/nowpayments";
 
 const ONBOARDING_FEE_USDT = 200;
+const WEBSITE_URL = "https://fngpay.vercel.app";
 
-const WELCOME = `👋 Welcome to Fngpay P2P!
+const WELCOME = `🎯 <b>Welcome to FNGPAY Partner Panel!</b>
 
-Thanks for reaching out about Partner Panel access. Here's the process:
+Thank you for your interest in becoming a Partner Agent. We're excited to have you join our P2P payment network.
 
-1️⃣ Pay ${ONBOARDING_FEE_USDT} USDT (TRC20) — address below. This isn't an extra charge, it lands in your panel wallet once your account is live.
-2️⃣ Your payment is confirmed automatically and I'll send your Agent ID right here, no screenshot or TXID needed.
-3️⃣ Register on the site using your Email, Mobile Number and that Agent ID, then complete Authenticator setup.
-4️⃣ Complete the 2,000 USDT security deposit to activate your panel.
-5️⃣ Add your bank accounts / UPI IDs and start receiving Payin/Payout orders.
+━━━━━━━━━━━━━━━━━━━━
+<b>📋 ONBOARDING PROCESS</b>
+━━━━━━━━━━━━━━━━━━━━
 
-Sending your payment address now — I'll message you the moment it's confirmed.`;
+<b>Step 1️⃣:</b> Security Deposit
+Pay ${ONBOARDING_FEE_USDT} USDT (TRC20 Network)
+→ This amount will be credited to your panel wallet
+
+<b>Step 2️⃣:</b> Automatic Confirmation
+Your payment is verified automatically
+→ No screenshots or TXID needed
+
+<b>Step 3️⃣:</b> Registration
+Visit: ${WEBSITE_URL}/register
+→ Use your Agent ID, Email & Mobile Number
+→ Set up 2FA Authenticator
+
+<b>Step 4️⃣:</b> Activate Panel
+Complete 2,000 USDT security deposit
+→ Full access to partner features
+
+<b>Step 5️⃣:</b> Start Earning
+Add your bank accounts & UPI IDs
+→ Begin receiving Payin/Payout orders
+
+━━━━━━━━━━━━━━━━━━━━
+<b>🌐 Website:</b> ${WEBSITE_URL}
+<b>💰 Onboarding Fee:</b> ${ONBOARDING_FEE_USDT} USDT (TRC20)
+<b>⚡ Processing:</b> Instant Confirmation
+━━━━━━━━━━━━━━━━━━━━
+
+<i>Generating your payment address now...</i>
+I'll notify you instantly when your payment is confirmed! ✅`;
 
 // Called by Telegram for every message sent to the bot. Telegram expects a
 // fast 2xx response regardless of outcome, so failures here are logged and

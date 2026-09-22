@@ -1,0 +1,14 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="30" cy="30" r="28" fill="#10B981" stroke="#059669" stroke-width="2"/>
+
+  <!-- FN Icon -->
+  <text x="30" y="40" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">FN</text>
+
+  <!-- FNGPAY Text -->
+  <text x="70" y="28" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1F2937">FNG</text>
+  <text x="120" y="28" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#10B981">PAY</text>
+
+  <!-- Subtitle -->
+  <text x="70" y="45" font-family="Arial, sans-serif" font-size="10" fill="#6B7280">P2P Partner Panel</text>
+</svg>

@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fngpay — Partner Panel",
-  description: "FNGPAY partner panel for payin, payout, and settlement operations.",
+  title: "FNGPAY — P2P Partner Panel",
+  description: "Professional P2P payment processing platform for agents and operators. Manage payins, payouts, and settlements with ease.",
+  icons: {
+    icon: '/fngpay-logo.svg',
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
