@@ -82,6 +82,42 @@ export async function POST(request: Request) {
     await sendTelegramMessage(chatId, WELCOME);
     console.log("✅ Welcome message sent!");
 
+    // TEMPORARY: Test mode - skip payments and generate agent code immediately
+    const TEST_MODE = true; // Set to false when NOWPayments is working
+
+    if (TEST_MODE) {
+      console.log("🧪 TEST MODE: Generating agent code without payment");
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        const { generateAgentCode } = await import("@/lib/telegram-onboarding");
+        const agentCode = await generateAgentCode(client);
+
+        await client.query(
+          `INSERT INTO telegram_onboarding_sessions
+           (chat_id, telegram_username, agent_code, payment_id, order_id, pay_currency, price_amount, price_currency, provider_status, status, credited_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
+          [chatId, username, agentCode, 'TEST-' + Date.now(), 'TEST-' + chatId, 'usdttrc20', 200, 'usdttrc20', 'finished', 'completed']
+        );
+
+        await client.query("COMMIT");
+
+        await sendTelegramMessage(
+          chatId,
+          `✅ Your Agent ID is: <b>${agentCode}</b>\n\nGo to https://fngpay.vercel.app/register and use this Agent ID to create your account!\n\n⚠️ This is TEST MODE - no payment required for testing.`
+        );
+
+        console.log("✅ Test agent code generated:", agentCode);
+        return NextResponse.json({ ok: true });
+      } catch (err) {
+        await client.query("ROLLBACK");
+        console.error("Test mode error:", err);
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
     if (!isNowPaymentsConfigured()) {
       await sendTelegramMessage(chatId, "⚠️ Payments aren't switched on yet on our end — please check back shortly.");
       return NextResponse.json({ ok: true });
@@ -89,6 +125,10 @@ export async function POST(request: Request) {
 
     const origin = new URL(request.url).origin;
     const orderId = `PV-ONB-${chatId}-${Date.now()}`;
+
+    console.log("💳 Creating payment with NOWPayments...");
+    console.log("Order ID:", orderId);
+    console.log("Amount:", ONBOARDING_FEE_USDT, "USDT");
 
     let payment;
     try {
@@ -99,9 +139,17 @@ export async function POST(request: Request) {
         orderDescription: "Fngpay P2P — partner panel onboarding fee",
         ipnCallbackUrl: `${origin}/api/telegram/payment-webhook`,
       });
+      console.log("✅ Payment created successfully:", payment.payment_id);
     } catch (err) {
-      console.error("NOWPayments createPayment (onboarding) failed:", err);
-      await sendTelegramMessage(chatId, "Sorry, couldn't generate a payment address right now — please try again in a minute.");
+      console.error("❌ NOWPayments createPayment failed:", err);
+      console.error("Error details:", JSON.stringify(err, null, 2));
+
+      // Send detailed error to user (temporary for debugging)
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      await sendTelegramMessage(
+        chatId,
+        `⚠️ Payment creation failed.\n\nError: ${errorMsg}\n\nThis is a sandbox test error. Checking configuration...`
+      );
       return NextResponse.json({ ok: true });
     }
 
