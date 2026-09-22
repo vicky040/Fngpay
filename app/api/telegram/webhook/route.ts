@@ -25,28 +25,38 @@ Sending your payment address now — I'll message you the moment it's confirmed.
 // text / re-create a payment for someone who already has one pending).
 // Updated: 2026-09-22
 export async function POST(request: Request) {
+  console.log("🔔 Telegram webhook called!");
+
   if (!verifyTelegramSecret(request)) {
+    console.log("❌ Invalid secret");
     return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
   }
+
+  console.log("✅ Telegram is configured:", isTelegramConfigured());
   if (!isTelegramConfigured()) {
     return NextResponse.json({ ok: true });
   }
 
   const update = await request.json();
+  console.log("📥 Received update:", JSON.stringify(update, null, 2));
   const message = update.message;
   if (!message?.chat?.id || typeof message.text !== "string") {
+    console.log("⚠️ No valid message found in update");
     return NextResponse.json({ ok: true });
   }
 
   const chatId: number = message.chat.id;
   const username: string | null = message.from?.username ?? null;
+  console.log(`💬 Processing message from chatId: ${chatId}, username: ${username}`);
 
   try {
+    console.log("🔍 Checking for active payment sessions...");
     const { rows: activeRows } = await pool.query(
       "SELECT id FROM telegram_onboarding_sessions WHERE chat_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
       [chatId]
     );
     if (activeRows.length > 0) {
+      console.log("⏳ User has active payment, sending reminder");
       await sendTelegramMessage(
         chatId,
         `Still waiting for your ${ONBOARDING_FEE_USDT} USDT payment — send it to the address I shared and I'll confirm automatically the moment it lands.`
@@ -54,11 +64,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    console.log("🔍 Checking for completed sessions...");
     const { rows: completedRows } = await pool.query(
       "SELECT agent_code FROM telegram_onboarding_sessions WHERE chat_id = $1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1",
       [chatId]
     );
     if (completedRows.length > 0 && completedRows[0].agent_code) {
+      console.log("✅ User already has agent code:", completedRows[0].agent_code);
       await sendTelegramMessage(
         chatId,
         `You already have an Agent ID: <b>${completedRows[0].agent_code}</b>\n\nHead back to the site's Register page and use it there.`
@@ -66,7 +78,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    console.log("👋 New user, sending welcome message...");
     await sendTelegramMessage(chatId, WELCOME);
+    console.log("✅ Welcome message sent!");
 
     if (!isNowPaymentsConfigured()) {
       await sendTelegramMessage(chatId, "⚠️ Payments aren't switched on yet on our end — please check back shortly.");
