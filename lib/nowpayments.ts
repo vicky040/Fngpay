@@ -1,15 +1,24 @@
 import { createHmac } from "crypto";
 
+// TEMPORARY: Hardcoded NOWPayments credentials for testing
+const HARDCODED_API_KEY = "S464KP4-3J6MZN9-MB361R6-ACERHJS";
+const HARDCODED_IPN_SECRET = "BqF/1wxKjG87kV4y1nj4pnqSIjjgK4YN";
+const HARDCODED_SANDBOX = true; // Set to false for production
+
 // https://api.nowpayments.io (production) / https://api-sandbox.nowpayments.io
 // (sandbox — separate account, separate API key, no real funds move).
 // Endpoints, fields, and the IPN signing scheme below are NOWPayments' own
 // documented contract, not something this app invents.
-const BASE_URL = process.env.NOWPAYMENTS_SANDBOX === "true" ? "https://api-sandbox.nowpayments.io/v1" : "https://api.nowpayments.io/v1";
+const BASE_URL = (process.env.NOWPAYMENTS_SANDBOX === "true" || HARDCODED_SANDBOX)
+  ? "https://api-sandbox.nowpayments.io/v1"
+  : "https://api.nowpayments.io/v1";
 
 export const USDT_TRC20 = "usdttrc20";
 
 export function isNowPaymentsConfigured(): boolean {
-  return Boolean(process.env.NOWPAYMENTS_API_KEY && process.env.NOWPAYMENTS_IPN_SECRET);
+  const apiKey = process.env.NOWPAYMENTS_API_KEY || HARDCODED_API_KEY;
+  const ipnSecret = process.env.NOWPAYMENTS_IPN_SECRET || HARDCODED_IPN_SECRET;
+  return Boolean(apiKey && ipnSecret);
 }
 
 export type CreatePaymentResult = {
@@ -31,10 +40,11 @@ export async function createPayment(params: {
   orderDescription: string;
   ipnCallbackUrl: string;
 }): Promise<CreatePaymentResult> {
+  const apiKey = process.env.NOWPAYMENTS_API_KEY || HARDCODED_API_KEY;
   const res = await fetch(`${BASE_URL}/payment`, {
     method: "POST",
     headers: {
-      "x-api-key": process.env.NOWPAYMENTS_API_KEY!,
+      "x-api-key": apiKey,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -55,8 +65,9 @@ export async function createPayment(params: {
 }
 
 export async function getPaymentStatus(paymentId: string): Promise<CreatePaymentResult> {
+  const apiKey = process.env.NOWPAYMENTS_API_KEY || HARDCODED_API_KEY;
   const res = await fetch(`${BASE_URL}/payment/${paymentId}`, {
-    headers: { "x-api-key": process.env.NOWPAYMENTS_API_KEY! },
+    headers: { "x-api-key": apiKey },
   });
   if (!res.ok) {
     const text = await res.text();
@@ -84,8 +95,9 @@ function sortDeep(value: unknown): unknown {
 
 export function verifyIpnSignature(body: unknown, signature: string | null): boolean {
   if (!signature) return false;
+  const ipnSecret = process.env.NOWPAYMENTS_IPN_SECRET || HARDCODED_IPN_SECRET;
   const sortedJson = JSON.stringify(sortDeep(body));
-  const expected = createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET!).update(sortedJson).digest("hex");
+  const expected = createHmac("sha512", ipnSecret).update(sortedJson).digest("hex");
   return expected === signature;
 }
 
