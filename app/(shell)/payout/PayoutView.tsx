@@ -38,9 +38,10 @@ export function PayoutView() {
   async function loadData() {
     try {
       // Load balance, rate, and banks
-      const payoutRes = await fetch("/api/payout");
+      const payoutRes = await fetch("/api/payout", { cache: 'no-store' });
       if (payoutRes.ok) {
         const payoutData = await payoutRes.json();
+        console.log('Payout data received:', payoutData);
         setBalanceUsdt(payoutData.balanceUsdt || "0.00");
         setApproxInr(payoutData.approxInr || "0");
         setExchangeRate(payoutData.exchangeRate || "104");
@@ -52,9 +53,10 @@ export function PayoutView() {
 
       // Load banks directly if payout API didn't return them
       if (!banks || banks.length === 0) {
-        const banksRes = await fetch("/api/banks");
+        const banksRes = await fetch("/api/banks", { cache: 'no-store' });
         if (banksRes.ok) {
           const banksData = await banksRes.json();
+          console.log('Banks data received:', banksData);
           if (banksData.banks && banksData.banks.length > 0) {
             setBanks(banksData.banks);
             setSelectedBankId(banksData.banks[0].id);
@@ -63,7 +65,7 @@ export function PayoutView() {
       }
 
       // Load withdrawal history
-      const historyRes = await fetch("/api/history?filter=withdrawals");
+      const historyRes = await fetch("/api/history?filter=withdrawals", { cache: 'no-store' });
       if (historyRes.ok) {
         const historyData = await historyRes.json();
         setEntries(historyData.entries || []);
