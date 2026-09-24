@@ -79,7 +79,7 @@ export async function GET() {
         agentCode: w.agent_code,
         agentName: w.full_name,
         amountUsdt: Number(w.amount_usdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        amountInr: Number(w.amount_inr).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 }),
+        amountInr: Math.round(Number(w.amount_inr)).toLocaleString('en-IN'),
         bankName: w.bank_name,
         accountLast4: w.account_number_last4,
         status: w.status,

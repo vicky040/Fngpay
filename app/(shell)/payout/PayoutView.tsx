@@ -203,7 +203,7 @@ export function PayoutView() {
               />
               {amountUsdt && Number(amountUsdt) > 0 && (
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>
-                  = ₹{(Number(amountUsdt) * Number(exchangeRate)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 })}
+                  = ₹{Math.round(Number(amountUsdt) * Number(exchangeRate)).toLocaleString('en-IN')}
                 </div>
               )}
             </div>

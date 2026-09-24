@@ -62,7 +62,7 @@ export async function GET() {
 
   const response = {
     balanceUsdt: balanceUsdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    approxInr: approxInr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 }),
+    approxInr: Math.round(approxInr).toLocaleString('en-IN'),
     exchangeRate: exchangeRate.toString(),
     banks,
   };

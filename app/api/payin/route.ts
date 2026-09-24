@@ -42,7 +42,7 @@ export async function GET() {
         return {
           id: r.id,
           amountUsdt: payAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          amountInr: priceAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 }),
+          amountInr: Math.round(priceAmount).toLocaleString('en-IN'),
           status: r.status || 'unknown',
           providerStatus: r.provider_status || 'unknown',
           createdAt: formatEntryDateTime(new Date(r.created_at)),
