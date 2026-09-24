@@ -20,7 +20,18 @@ export async function GET() {
     }
 
     // Get all withdrawal requests (pending first, then others)
-    let withdrawals = [];
+    let withdrawals: Array<{
+      id: number;
+      agentCode: string;
+      agentName: string;
+      amountUsdt: string;
+      amountInr: string;
+      bankName: string;
+      accountLast4: string;
+      status: string;
+      createdAt: string;
+      rejectionReason?: string;
+    }> = [];
     let pendingCount = 0;
 
     try {

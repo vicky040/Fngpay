@@ -51,7 +51,16 @@ export async function GET() {
     }));
 
     // Get withdrawal requests (handle if new columns don't exist yet)
-    let withdrawals = [];
+    let withdrawals: Array<{
+      id: number;
+      amountUsdt: string;
+      amountInr: string;
+      bankName: string;
+      accountLast4: string;
+      status: string;
+      createdAt: string;
+      rejectionReason?: string;
+    }> = [];
     try {
       const withdrawalsResult = await pool.query<{
         id: number;

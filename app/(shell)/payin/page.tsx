@@ -6,15 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function PayinPage() {
-  return (
-    <>
-      <div className="page-title-row">
-        <div>
-          <h2 className="page-title">Payin orders</h2>
-          <div className="page-sub">Track incoming payin orders as they appear on your panel.</div>
-        </div>
-      </div>
-      <PayinView />
-    </>
-  );
+  return <PayinView />;
 }
