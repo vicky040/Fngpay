@@ -109,8 +109,8 @@ export async function POST(request: Request) {
     await sendTelegramMessage(chatId, WELCOME);
     console.log("✅ Welcome message sent!");
 
-    // TEMPORARY: Test mode - skip payments and generate agent code immediately
-    const TEST_MODE = true; // ENABLED - NOWPayments account not fully configured
+    // PRODUCTION MODE: Real payments enabled with NOWPayments
+    const TEST_MODE = false; // DISABLED - NOWPayments account is now configured ✅
 
     if (TEST_MODE) {
       console.log("🧪 TEST MODE: Generating agent code without payment");
