@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:init": "node scripts/init-db.js",
     "db:delete-agent": "node scripts/delete-agent.js",
-    "db:cleanup": "node scripts/cleanup-agents.js"
+    "db:cleanup": "node scripts/cleanup-agents.js",
+    "db:create-admin": "node scripts/create-admin-agent.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
