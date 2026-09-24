@@ -9,15 +9,13 @@
  */
 
 const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-  console.error('❌ DATABASE_URL not found in environment');
-  process.exit(1);
-}
-
-const pool = new Pool({ connectionString: DATABASE_URL });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL ||
+    "postgresql://neondb_owner:npg_za7tkm6KulOX@ep-falling-sea-auzw7sij-pooler.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require",
+  ssl: { rejectUnauthorized: true }
+});
 
 // Demo agent configurations
 const DEMO_AGENTS = [
