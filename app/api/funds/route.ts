@@ -9,16 +9,17 @@ export async function GET() {
   if ("error" in auth) return auth.error;
   const agentId = auth.agent.id;
 
-  const [agentResult, sessionResult, walletResult] = await Promise.all([
+  const [agentResult, sessionResult, exchangeRateResult] = await Promise.all([
     pool.query<{ security_deposit_completed: boolean }>("SELECT security_deposit_completed FROM agents WHERE id = $1", [agentId]),
     pool.query<{ id: number; pay_address: string; pay_amount: string; price_amount: string; provider_status: string }>(
       "SELECT id, pay_address, pay_amount, price_amount, provider_status FROM deposit_sessions WHERE agent_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
       [agentId]
     ),
-    pool.query<{ fixed_rate_inr: string }>("SELECT fixed_rate_inr FROM wallets WHERE agent_id = $1", [agentId]),
+    // Get exchange rate from system_settings (updated by admin)
+    pool.query<{ value: string }>("SELECT value FROM system_settings WHERE key = 'exchange_rate_inr_usdt'"),
   ]);
 
-  const rate = Number(walletResult.rows[0]?.fixed_rate_inr ?? 0);
+  const rate = Number(exchangeRateResult.rows[0]?.value ?? 104);
   const activeSession = sessionResult.rows[0];
 
   return NextResponse.json({
