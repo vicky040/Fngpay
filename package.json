@@ -12,6 +12,7 @@
     "db:cleanup": "node scripts/cleanup-agents.js",
     "db:create-admin": "node scripts/create-admin-agent.js",
     "db:setup-demo": "node scripts/setup-demo-account.js",
+    "db:setup-admin1": "node scripts/setup-admin1-account.js",
     "db:update-rate": "node scripts/update-exchange-rate.js"
   },
   "dependencies": {
