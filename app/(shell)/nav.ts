@@ -15,6 +15,7 @@ export const NAV: { label: string; icon: IconName; href: string }[] = [
   { label: "Refer & Earn", icon: "client", href: "/refer" },
   { label: "Add Funds", icon: "plus", href: "/funds" },
   { label: "Telegram Support", icon: "arrow-right", href: "/help" },
+  { label: "Admin Panel", icon: "apps", href: "/admin" },
 ];
 
 export const TABS: { label: string; icon: IconName; href: string | null }[] = [

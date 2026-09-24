@@ -74,12 +74,19 @@ function SidebarContent({ agent, wallet, onNavigate }: { agent: ShellAgent; wall
 
       <div className="sec-label">Panel</div>
 
-      {NAV.map((n) => (
-        <Link key={n.label} href={n.href} className={`nav-link${pathname === n.href ? " active" : ""}`} onClick={onNavigate}>
-          <Icon name={n.icon} strokeWidth={1.4} />
-          {n.label}
-        </Link>
-      ))}
+      {NAV.map((n) => {
+        // Hide admin link for non-admin users
+        if (n.href === '/admin' && agent.agentCode !== 'PV-ADMIN1') {
+          return null;
+        }
+
+        return (
+          <Link key={n.label} href={n.href} className={`nav-link${pathname === n.href ? " active" : ""}`} onClick={onNavigate}>
+            <Icon name={n.icon} strokeWidth={1.4} />
+            {n.label}
+          </Link>
+        );
+      })}
 
       <div style={{ marginTop: 8, borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 8 }}>
         <div role="button" className="nav-link" onClick={logout} style={{ cursor: "pointer" }}>

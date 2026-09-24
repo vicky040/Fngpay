@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { EmptyState } from "../../components/EmptyState";
+import Link from "next/link";
+import { Icon } from "../../components/Icon";
 
-type Order = { amount: string; status: string; date: string };
+type Deposit = {
+  id: number;
+  amountUsdt: string;
+  amountInr: string;
+  status: string;
+  providerStatus: string;
+  createdAt: string;
+};
 
 export function PayinView() {
-  const [orders, setOrders] = useState<Order[] | null>(null);
+  const [deposits, setDeposits] = useState<Deposit[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,43 +25,131 @@ export function PayinView() {
         return res.json();
       })
       .then((data) => {
-        if (!cancelled) setOrders(data.orders);
+        if (!cancelled) setDeposits(data.deposits);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load payin orders");
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load deposit history");
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
+    waiting: { label: "⏳ Waiting", color: "#f59e0b", bgColor: "#fef3c7" },
+    confirming: { label: "🔄 Confirming", color: "#3b82f6", bgColor: "#dbeafe" },
+    confirmed: { label: "✅ Confirmed", color: "#10b981", bgColor: "#d1fae5" },
+    finished: { label: "✅ Completed", color: "#10b981", bgColor: "#d1fae5" },
+    failed: { label: "❌ Failed", color: "#ef4444", bgColor: "#fee2e2" },
+    expired: { label: "⏱️ Expired", color: "#6b7280", bgColor: "#f3f4f6" },
+  };
+
   return (
-    <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", marginTop: 14, padding: orders?.length ? 0 : "4px 0" }}>
-      {error ? (
-        <div className="field-error" style={{ padding: 14 }}>
-          {error}
+    <>
+      <div className="page-title-row">
+        <div>
+          <h2 className="page-title">Payin Orders</h2>
+          <p style={{ fontSize: 13, color: "var(--ash-600)", marginTop: 4 }}>
+            Track your deposit transactions and add more funds
+          </p>
         </div>
-      ) : orders === null ? (
-        <div style={{ fontSize: 13, color: "var(--ash-500)", padding: 14 }}>Loading…</div>
-      ) : orders.length === 0 ? (
-        <EmptyState
-          icon="arrow-right"
-          title="No payin orders yet"
-          subtitle="When payin volume starts flowing to your panel, live orders will list here with status and amount."
-        />
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {orders.map((o, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: 14, borderBottom: i < orders.length - 1 ? "1px solid var(--sub-divider)" : undefined }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-900)" }}>{o.amount}</div>
-                <div style={{ fontSize: 12, color: "var(--ash-500)", marginTop: 2 }}>{o.date}</div>
-              </div>
-              <span className="badge badge-green">{o.status}</span>
+      </div>
+
+      {/* Add Funds Button */}
+      <div style={{ marginTop: 14 }}>
+        <Link
+          href="/funds"
+          className="btn-primary"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            height: 42,
+            paddingLeft: 16,
+            paddingRight: 16,
+          }}
+        >
+          <Icon name="plus" style={{ width: 16, height: 16 }} />
+          Add Funds
+        </Link>
+      </div>
+
+      {/* Deposit History */}
+      <div style={{ marginTop: 20 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
+          Deposit History
+        </div>
+
+        {error ? (
+          <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 16 }}>
+            <div className="field-error">{error}</div>
+          </div>
+        ) : deposits === null ? (
+          <div style={{ fontSize: 13, color: "var(--ash-500)" }}>Loading…</div>
+        ) : deposits.length === 0 ? (
+          <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 24, textAlign: "center" }}>
+            <Icon name="plus" style={{ width: 32, height: 32, color: "var(--ash-400)", margin: "0 auto 12px" }} />
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-800)", marginBottom: 4 }}>
+              No deposits yet
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+            <div style={{ fontSize: 12, color: "var(--ash-500)", marginBottom: 12 }}>
+              Your deposit transactions will appear here once you add funds
+            </div>
+            <Link href="/funds" className="btn-primary" style={{ height: 38, fontSize: 13 }}>
+              Make Your First Deposit
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {deposits.map((d) => {
+              const statusConfig = STATUS_CONFIG[d.providerStatus] || { label: d.status, color: "var(--ash-500)", bgColor: "var(--ash-100)" };
+
+              return (
+                <div
+                  key={d.id}
+                  style={{
+                    background: "var(--paper)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r-lg)",
+                    padding: 16,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <Icon name="arrow-right" style={{ width: 16, height: 16, color: "var(--moss-600)", transform: "rotate(135deg)" }} />
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 600, color: "var(--moss-600)" }}>
+                          +{d.amountUsdt} USDT
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ash-600)", marginLeft: 24 }}>
+                        ₹{d.amountInr} INR
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "var(--r-sm)",
+                        background: statusConfig.bgColor,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: statusConfig.color,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {statusConfig.label}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 11, color: "var(--ash-500)", marginLeft: 24 }}>
+                    {d.createdAt}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
