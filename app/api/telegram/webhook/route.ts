@@ -161,6 +161,9 @@ export async function POST(request: Request) {
 
     let payment;
     try {
+      console.log("📞 Calling createPayment function...");
+      console.log("Config check - isNowPaymentsConfigured():", isNowPaymentsConfigured());
+
       payment = await createPayment({
         priceAmount: ONBOARDING_FEE_USDT,
         priceCurrency: "usdttrc20",
@@ -168,19 +171,30 @@ export async function POST(request: Request) {
         orderDescription: "Fngpay P2P — partner panel onboarding fee",
         ipnCallbackUrl: `${origin}/api/telegram/payment-webhook`,
       });
+
       console.log("✅ Payment created successfully!");
       console.log("Payment ID:", payment.payment_id);
       console.log("Pay Address:", payment.pay_address);
       console.log("Pay Amount:", payment.pay_amount);
     } catch (err) {
-      console.error("❌ NOWPayments createPayment failed:", err);
+      console.error("❌ NOWPayments createPayment failed!");
+      console.error("Error object:", err);
+      console.error("Error type:", typeof err);
+      console.error("Error constructor:", err?.constructor?.name);
+
+      if (err instanceof Error) {
+        console.error("Error message:", err.message);
+        console.error("Error stack:", err.stack);
+      } else {
+        console.error("Non-Error object:", JSON.stringify(err, null, 2));
+      }
 
       const errorMsg = err instanceof Error ? err.message : String(err);
-      console.error("Error message:", errorMsg);
 
+      // Send detailed error to user for debugging
       await sendTelegramMessage(
         chatId,
-        "Sorry, couldn't generate a payment address right now. Please contact support or try again in a minute."
+        `⚠️ Payment Error\n\nCouldn't generate payment address.\n\nError: ${errorMsg}\n\nPlease contact support with this error message.`
       );
       return NextResponse.json({ ok: true });
     }
