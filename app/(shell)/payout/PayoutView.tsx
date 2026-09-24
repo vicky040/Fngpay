@@ -19,12 +19,28 @@ type HistoryEntry = {
   bal: string;
 };
 
+type WithdrawalRequest = {
+  id: number;
+  amountUsdt: string;
+  amountInr: string;
+  exchangeRate: string;
+  status: string;
+  bankName: string;
+  accountLast4: string;
+  createdAt: string;
+  approvedAt: string | null;
+  rejectedAt: string | null;
+  completedAt: string | null;
+  rejectionReason: string | null;
+};
+
 export function PayoutView() {
   const [balanceUsdt, setBalanceUsdt] = useState<string>("0.00");
   const [approxInr, setApproxInr] = useState<string>("0");
   const [exchangeRate, setExchangeRate] = useState<string>("104");
   const [banks, setBanks] = useState<Bank[]>([]);
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
+  const [requests, setRequests] = useState<WithdrawalRequest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [amountUsdt, setAmountUsdt] = useState("");
   const [selectedBankId, setSelectedBankId] = useState<number | null>(null);
@@ -69,6 +85,14 @@ export function PayoutView() {
       if (historyRes.ok) {
         const historyData = await historyRes.json();
         setEntries(historyData.entries || []);
+      }
+
+      // Load withdrawal requests
+      const requestsRes = await fetch("/api/payout/requests", { cache: 'no-store' });
+      if (requestsRes.ok) {
+        const requestsData = await requestsRes.json();
+        console.log('Withdrawal requests received:', requestsData);
+        setRequests(requestsData.requests || []);
       }
     } catch (err) {
       console.error('Error loading payout data:', err);
@@ -258,6 +282,76 @@ export function PayoutView() {
           </form>
         )}
       </div>
+
+      {/* Withdrawal Requests */}
+      {requests && requests.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
+            Withdrawal Requests
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {requests.map((req) => {
+              const isPending = req.status === 'pending';
+              const isApproved = req.status === 'approved';
+              const isRejected = req.status === 'rejected';
+              const isCompleted = req.status === 'completed';
+
+              return (
+                <div
+                  key={req.id}
+                  style={{
+                    background: "var(--paper)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r-lg)",
+                    padding: 16,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink-900)" }}>
+                          {req.amountUsdt} USDT
+                        </div>
+                        {isPending && <span className="badge" style={{ background: "#fef3c7", color: "#92400e" }}>⏳ Pending</span>}
+                        {isApproved && <span className="badge" style={{ background: "#dbeafe", color: "#1e40af" }}>✓ Approved</span>}
+                        {isRejected && <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>✕ Rejected</span>}
+                        {isCompleted && <span className="badge badge-green">✓ Completed</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ash-600)", marginBottom: 4 }}>
+                        To: {req.bankName} ****{req.accountLast4}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ash-600)" }}>
+                        ≈ ₹{req.amountInr} at {req.exchangeRate} INR/USDT
+                      </div>
+                      {req.rejectionReason && (
+                        <div style={{ fontSize: 12, color: "#dc2626", marginTop: 6, padding: 8, background: "#fee2e2", borderRadius: "var(--r-sm)" }}>
+                          <strong>Reason:</strong> {req.rejectionReason}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: "var(--ash-500)" }}>
+                        {req.createdAt}
+                      </div>
+                      {req.approvedAt && (
+                        <div style={{ fontSize: 10, color: "var(--ash-500)", marginTop: 2 }}>
+                          Approved: {req.approvedAt}
+                        </div>
+                      )}
+                      {req.completedAt && (
+                        <div style={{ fontSize: 10, color: "var(--ash-500)", marginTop: 2 }}>
+                          Completed: {req.completedAt}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Withdrawal History */}
       {entries && (
