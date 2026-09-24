@@ -11,7 +11,8 @@
     "db:delete-agent": "node scripts/delete-agent.js",
     "db:cleanup": "node scripts/cleanup-agents.js",
     "db:create-admin": "node scripts/create-admin-agent.js",
-    "db:setup-demo": "node scripts/setup-demo-account.js"
+    "db:setup-demo": "node scripts/setup-demo-account.js",
+    "db:update-rate": "node scripts/update-exchange-rate.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
