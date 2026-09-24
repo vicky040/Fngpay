@@ -10,15 +10,13 @@ type Bank = {
   accountLast4: string;
 };
 
-type WithdrawalRequest = {
-  id: number;
-  amountUsdt: string;
-  amountInr: string;
-  bankName: string;
-  accountLast4: string;
-  status: string;
-  createdAt: string;
-  rejectionReason?: string;
+type HistoryEntry = {
+  kind: string;
+  type: string;
+  sub: string;
+  date: string;
+  amount: string;
+  bal: string;
 };
 
 type PayoutData = {
@@ -26,11 +24,11 @@ type PayoutData = {
   approxInr: string;
   exchangeRate: string;
   banks: Bank[];
-  withdrawals: WithdrawalRequest[];
 };
 
 export function PayoutView() {
   const [data, setData] = useState<PayoutData | null>(null);
+  const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"idle" | "form">("idle");
   const [amountUsdt, setAmountUsdt] = useState("");
@@ -44,13 +42,20 @@ export function PayoutView() {
 
   async function loadData() {
     try {
-      const res = await fetch("/api/payout");
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
-      const d = await res.json();
-      setData(d);
-      if (d.banks.length > 0) {
-        setSelectedBankId(d.banks[0].id);
+      // Load balance and banks from payout API
+      const payoutRes = await fetch("/api/payout");
+      if (!payoutRes.ok) throw new Error(`API returned ${payoutRes.status}`);
+      const payoutData = await payoutRes.json();
+      setData(payoutData);
+      if (payoutData.banks.length > 0) {
+        setSelectedBankId(payoutData.banks[0].id);
       }
+
+      // Load withdrawal history from history API
+      const historyRes = await fetch("/api/history?filter=withdrawals");
+      if (!historyRes.ok) throw new Error(`API returned ${historyRes.status}`);
+      const historyData = await historyRes.json();
+      setEntries(historyData.entries);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load payout data");
     }
@@ -73,9 +78,9 @@ export function PayoutView() {
       return;
     }
 
-    const balance = Number(data?.balanceUsdt || 0);
+    const balance = Number(data?.balanceUsdt.replace(/,/g, '') || 0);
     if (amount > balance) {
-      setFormError(`Insufficient balance. You have ${balance} USDT`);
+      setFormError(`Insufficient balance. You have ${data?.balanceUsdt} USDT`);
       return;
     }
 
@@ -97,6 +102,7 @@ export function PayoutView() {
       }
 
       // Success!
+      alert("✅ Withdrawal request submitted! Admin will review shortly.");
       setView("idle");
       setAmountUsdt("");
       await loadData(); // Reload to show new request
@@ -107,18 +113,11 @@ export function PayoutView() {
     }
   }
 
-  const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-    pending: { label: "🟡 Pending", color: "#f59e0b", bgColor: "#fef3c7" },
-    approved: { label: "🔵 Approved", color: "#3b82f6", bgColor: "#dbeafe" },
-    completed: { label: "✅ Completed", color: "#10b981", bgColor: "#d1fae5" },
-    rejected: { label: "🔴 Rejected", color: "#ef4444", bgColor: "#fee2e2" },
-  };
-
   if (error) {
     return <div className="field-error" style={{ marginTop: 14 }}>{error}</div>;
   }
 
-  if (!data) {
+  if (!data || entries === null) {
     return <div style={{ fontSize: 13, color: "var(--ash-500)", marginTop: 14 }}>Loading…</div>;
   }
 
@@ -271,90 +270,62 @@ export function PayoutView() {
         </div>
       )}
 
-      {/* Withdrawal Requests List */}
+      {/* Withdrawal History */}
       <div style={{ marginTop: 20 }}>
         <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
-          Your Withdrawal Requests
+          Withdrawal History
         </div>
 
-        {data.withdrawals.length === 0 ? (
+        {entries.length === 0 ? (
           <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 24, textAlign: "center" }}>
             <Icon name="arrow-right" style={{ width: 32, height: 32, color: "var(--ash-400)", margin: "0 auto 12px" }} />
             <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-800)", marginBottom: 4 }}>
-              No withdrawal requests yet
+              No withdrawals yet
             </div>
             <div style={{ fontSize: 12, color: "var(--ash-500)" }}>
-              Your withdrawal requests will appear here with status updates
+              Your withdrawal history will appear here
             </div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {data.withdrawals.map((w) => {
-              const statusConfig = STATUS_CONFIG[w.status] || { label: w.status, color: "var(--ash-500)", bgColor: "var(--ash-100)" };
-
-              return (
-                <div
-                  key={w.id}
-                  style={{
-                    background: "var(--paper)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--r-lg)",
-                    padding: 16,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 600, color: "var(--ink-900)" }}>
-                        {w.amountUsdt} USDT
+            {entries.map((e, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: "var(--paper)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--r-lg)",
+                  padding: 16,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Icon name="arrow-right" style={{ width: 16, height: 16, color: "#ef4444" }} />
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-900)", textTransform: "uppercase", letterSpacing: ".02em" }}>
+                        {e.kind}
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--ash-600)", marginTop: 2 }}>
-                        ≈ ₹{w.amountInr}
-                      </div>
+                      <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>Debit</span>
                     </div>
-                    <div
-                      style={{
-                        padding: "4px 10px",
-                        borderRadius: "var(--r-sm)",
-                        background: statusConfig.bgColor,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: statusConfig.color,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {statusConfig.label}
+                    <div style={{ fontSize: 12, color: "var(--ash-600)", marginLeft: 24, marginBottom: 4 }}>
+                      {e.sub}
                     </div>
                   </div>
-
-                  <div style={{ fontSize: 12, color: "var(--ash-600)", marginBottom: 4 }}>
-                    To: {w.bankName} ****{w.accountLast4}
-                  </div>
-
-                  <div style={{ fontSize: 11, color: "var(--ash-500)" }}>
-                    Requested: {w.createdAt}
-                  </div>
-
-                  {w.status === "rejected" && w.rejectionReason && (
-                    <div
-                      style={{
-                        marginTop: 10,
-                        padding: 10,
-                        background: "#fee2e2",
-                        borderRadius: "var(--r-sm)",
-                        border: "1px solid #fecaca",
-                      }}
-                    >
-                      <div style={{ fontSize: 11.5, fontWeight: 600, color: "#991b1b", marginBottom: 4 }}>
-                        Rejection Reason:
-                      </div>
-                      <div style={{ fontSize: 12, color: "#7f1d1d" }}>
-                        {w.rejectionReason}
-                      </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, color: "#dc2626" }}>
+                      {e.amount}
                     </div>
-                  )}
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ash-500)", marginTop: 2 }}>
+                      {e.bal}
+                    </div>
+                  </div>
                 </div>
-              );
-            })}
+
+                <div style={{ fontSize: 11, color: "var(--ash-500)", marginLeft: 24 }}>
+                  {e.date}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

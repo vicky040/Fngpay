@@ -3,9 +3,21 @@ import { pool } from "@/lib/db";
 import { formatEntryDateTime, formatUsdt } from "@/lib/format";
 import { requireApiAgent } from "@/lib/api-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await requireApiAgent();
   if ("error" in auth) return auth.error;
+
+  // Get filter from query params (?filter=deposits or ?filter=withdrawals)
+  const { searchParams } = new URL(request.url);
+  const filter = searchParams.get('filter');
+
+  // Build WHERE clause based on filter
+  let whereClause = 'WHERE agent_id = $1';
+  if (filter === 'deposits') {
+    whereClause += " AND kind = 'DEPOSIT'";
+  } else if (filter === 'withdrawals') {
+    whereClause += " AND kind = 'WITHDRAWAL'";
+  }
 
   const [entriesResult, walletResult] = await Promise.all([
     pool.query<{
@@ -18,7 +30,7 @@ export async function GET() {
     }>(
       `SELECT kind, entry_type, sub, occurred_at, amount, balance
        FROM wallet_entries
-       WHERE agent_id = $1
+       ${whereClause}
        ORDER BY occurred_at DESC`,
       [auth.agent.id]
     ),
