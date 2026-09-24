@@ -10,9 +10,9 @@ type Entry = { kind: string; sub: string; amount: string; day: string };
 const QUICK_ACTIONS: { label: string; icon: IconName; href: string | null }[] = [
   { label: "Banks", icon: "budget", href: "/banks" },
   { label: "History", icon: "clock", href: "/history" },
-  { label: "Add funds", icon: "plus", href: null },
-  { label: "Refer", icon: "client", href: null },
-  { label: "Support", icon: "info", href: null },
+  { label: "Add funds", icon: "plus", href: "/funds" },
+  { label: "Refer", icon: "client", href: "/refer" },
+  { label: "Support", icon: "info", href: "/help" },
 ];
 
 export function HomeView() {
