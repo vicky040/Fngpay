@@ -42,6 +42,7 @@ export function PayoutView() {
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
   const [requests, setRequests] = useState<WithdrawalRequest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [amountUsdt, setAmountUsdt] = useState("");
   const [selectedBankId, setSelectedBankId] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -142,6 +143,8 @@ export function PayoutView() {
 
       alert("✅ Withdrawal request submitted! Admin will review shortly.");
       setAmountUsdt("");
+      setShowForm(false);
+      setFormError(null);
       await loadData();
     } catch {
       setFormError("Couldn't create withdrawal request — please try again");
@@ -181,29 +184,48 @@ export function PayoutView() {
         </div>
       </div>
 
-      {/* Withdrawal Request Form */}
-      <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 16, marginTop: 12 }}>
-        <div style={{ fontSize: 15.5, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
-          Request Withdrawal
+      {/* Withdraw Funds Button or Form */}
+      {!showForm ? (
+        <div style={{ marginTop: 14 }}>
+          <button
+            onClick={() => setShowForm(true)}
+            className="btn-primary"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              height: 42,
+              paddingLeft: 16,
+              paddingRight: 16,
+            }}
+          >
+            <Icon name="arrow-right" style={{ width: 16, height: 16, transform: "rotate(180deg)" }} />
+            Withdraw Funds
+          </button>
         </div>
+      ) : (
+        <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 16, marginTop: 12 }}>
+          <div style={{ fontSize: 15.5, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
+            Request Withdrawal
+          </div>
 
-        {banks.length === 0 ? (
-          <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: "var(--r-md)", padding: 14, marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <Icon name="info" style={{ width: 18, height: 18, color: "#f59e0b", flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: "#92400e", marginBottom: 4 }}>No bank accounts added</div>
-                <div style={{ fontSize: 12.5, color: "#78350f", marginBottom: 8 }}>
-                  You need to add at least one bank account before requesting withdrawals.
+          {banks.length === 0 ? (
+            <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: "var(--r-md)", padding: 14, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <Icon name="info" style={{ width: 18, height: 18, color: "#f59e0b", flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: "#92400e", marginBottom: 4 }}>No bank accounts added</div>
+                  <div style={{ fontSize: 12.5, color: "#78350f", marginBottom: 8 }}>
+                    You need to add at least one bank account before requesting withdrawals.
+                  </div>
+                  <Link href="/banks" className="btn-secondary" style={{ height: 36, fontSize: 13, display: "inline-flex", alignItems: "center" }}>
+                    Add Bank Account
+                  </Link>
                 </div>
-                <Link href="/banks" className="btn-secondary" style={{ height: 36, fontSize: 13, display: "inline-flex", alignItems: "center" }}>
-                  Add Bank Account
-                </Link>
               </div>
             </div>
-          </div>
-        ) : (
-          <form onSubmit={submitWithdrawal}>
+          ) : (
+            <form onSubmit={submitWithdrawal}>
             {/* Amount Input */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-900)", marginBottom: 6 }}>
@@ -271,17 +293,32 @@ export function PayoutView() {
 
             {formError && <div className="field-error" style={{ marginBottom: 12 }}>{formError}</div>}
 
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={submitting}
-              style={{ width: "100%", height: 42 }}
-            >
-              {submitting ? "Submitting..." : "Submit Withdrawal Request"}
-            </button>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setAmountUsdt("");
+                  setFormError(null);
+                }}
+                className="btn-secondary"
+                style={{ flex: 1, height: 42 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={submitting}
+                style={{ flex: 1, height: 42 }}
+              >
+                {submitting ? "Submitting..." : "Submit Request"}
+              </button>
+            </div>
           </form>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Withdrawal Requests - Only show pending and approved */}
       {requests && requests.filter(r => r.status === 'pending' || r.status === 'approved').length > 0 && (
