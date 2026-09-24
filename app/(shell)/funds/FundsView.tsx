@@ -100,8 +100,12 @@ export function FundsView() {
     e.preventDefault();
     setFormError(null);
     const amountInr = Number(amount);
-    if (!Number.isFinite(amountInr) || amountInr < 100) {
-      setFormError("Enter an amount of at least ₹100.");
+
+    // Minimum deposit: 20,000 USDT (at 104 INR/USDT = ₹20,80,000)
+    const MIN_DEPOSIT_INR = 2080000;
+
+    if (!Number.isFinite(amountInr) || amountInr < MIN_DEPOSIT_INR) {
+      setFormError(`Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (20,000 USDT at 104 INR/USDT).`);
       return;
     }
     setSubmitting(true);

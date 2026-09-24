@@ -17,8 +17,14 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const amountInr = Number(body.amountInr);
-  if (!Number.isFinite(amountInr) || amountInr < 100) {
-    return NextResponse.json({ error: "Enter an amount of at least ₹100." }, { status: 400 });
+
+  // Minimum deposit: 20,000 USDT (at 104 INR/USDT = ₹20,80,000)
+  const MIN_DEPOSIT_INR = 2080000; // ₹20.8 lakhs
+
+  if (!Number.isFinite(amountInr) || amountInr < MIN_DEPOSIT_INR) {
+    return NextResponse.json({
+      error: `Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (20,000 USDT at 104 INR/USDT).`
+    }, { status: 400 });
   }
 
   const origin = new URL(request.url).origin;
