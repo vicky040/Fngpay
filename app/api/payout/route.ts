@@ -2,20 +2,29 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireApiAgent } from "@/lib/api-auth";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const auth = await requireApiAgent();
   if ("error" in auth) return auth.error;
   const agentId = auth.agent.id;
 
-  console.log('Payout API - Agent ID:', agentId);
+  console.log('=== PAYOUT API DEBUG ===');
+  console.log('Agent ID:', agentId);
+  console.log('Agent Code:', auth.agent.agentCode);
 
   // Get wallet balance
   const walletResult = await pool.query<{ balance_usdt: string }>(
     "SELECT balance_usdt FROM wallets WHERE agent_id = $1",
     [agentId]
   );
-  console.log('Wallet query result:', walletResult.rows);
+  console.log('Wallet query - Row count:', walletResult.rowCount);
+  console.log('Wallet query - Rows:', JSON.stringify(walletResult.rows));
+  console.log('First row balance_usdt:', walletResult.rows[0]?.balance_usdt);
+
   const balanceUsdt = Number(walletResult.rows[0]?.balance_usdt || 0);
+  console.log('Parsed balanceUsdt:', balanceUsdt);
 
   // Get exchange rate from system settings
   let exchangeRate = 104;
@@ -58,7 +67,13 @@ export async function GET() {
     banks,
   };
 
-  console.log('Payout API response:', { ...response, banksCount: banks.length });
+  console.log('=== PAYOUT API RESPONSE ===');
+  console.log('Balance USDT (raw):', balanceUsdt);
+  console.log('Balance USDT (formatted):', response.balanceUsdt);
+  console.log('Approx INR:', response.approxInr);
+  console.log('Exchange rate:', response.exchangeRate);
+  console.log('Banks count:', banks.length);
+  console.log('Full response:', JSON.stringify(response, null, 2));
 
   return NextResponse.json(response);
 }
