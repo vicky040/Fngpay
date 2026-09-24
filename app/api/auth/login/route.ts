@@ -8,13 +8,10 @@ export async function POST(request: Request) {
   const body = await request.json();
   const identifier = String(body.identifier ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
-  const otp = String(body.otp ?? "");
+  const otp = String(body.otp ?? "").trim();
 
-  if (!identifier || !password || !otp) {
-    return NextResponse.json({ error: "Agent ID / email, password, and authenticator code are all required." }, { status: 400 });
-  }
-  if (!/^\d{6}$/.test(otp)) {
-    return NextResponse.json({ error: "Authenticator code must be 6 digits." }, { status: 400 });
+  if (!identifier || !password) {
+    return NextResponse.json({ error: "Agent ID / email and password are required." }, { status: 400 });
   }
 
   const { rows } = await pool.query(
@@ -37,6 +34,13 @@ export async function POST(request: Request) {
   // setup. Accounts that haven't finished setup yet fall through to the
   // forced /authenticator-setup step right after this — see requireAgent().
   if (rows[0].two_factor_enabled && rows[0].totp_secret) {
+    // 2FA is enabled - require OTP
+    if (!otp) {
+      return NextResponse.json({ error: "Authenticator code is required." }, { status: 400 });
+    }
+    if (!/^\d{6}$/.test(otp)) {
+      return NextResponse.json({ error: "Authenticator code must be 6 digits." }, { status: 400 });
+    }
     if (!verifyTotp(rows[0].totp_secret, otp)) {
       return NextResponse.json({ error: "Invalid authenticator code." }, { status: 401 });
     }

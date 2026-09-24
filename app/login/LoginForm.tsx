@@ -46,7 +46,7 @@ export function LoginForm() {
           </div>
           <div>
             <div className="card-head-title">Log in to FNGPAY</div>
-            <div className="card-head-sub">Use your Agent ID or registered email with the authenticator code from your setup.</div>
+            <div className="card-head-sub">Use your Agent ID or registered email. Authenticator code required only if 2FA is enabled.</div>
           </div>
         </div>
 
@@ -90,7 +90,7 @@ export function LoginForm() {
             <div className="form-row c1">
               <div className="field">
                 <label className="field-label" htmlFor="otp">
-                  Authenticator Code <span className="req">*</span>
+                  Authenticator Code <span style={{ fontSize: 11, color: "var(--ash-500)", fontWeight: 400 }}>(if 2FA enabled)</span>
                 </label>
                 <input
                   id="otp"
@@ -99,11 +99,10 @@ export function LoginForm() {
                   placeholder="000000"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  required
                 />
                 <div className="field-hint">
                   <Icon name="info" />
-                  6-digit code from your authenticator app.
+                  6-digit code from your authenticator app (leave empty if 2FA is disabled).
                 </div>
               </div>
             </div>
