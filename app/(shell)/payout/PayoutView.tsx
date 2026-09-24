@@ -283,19 +283,17 @@ export function PayoutView() {
         )}
       </div>
 
-      {/* Withdrawal Requests */}
-      {requests && requests.length > 0 && (
+      {/* Withdrawal Requests - Only show pending and approved */}
+      {requests && requests.filter(r => r.status === 'pending' || r.status === 'approved').length > 0 && (
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
             Withdrawal Requests
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {requests.map((req) => {
+            {requests.filter(r => r.status === 'pending' || r.status === 'approved').map((req) => {
               const isPending = req.status === 'pending';
               const isApproved = req.status === 'approved';
-              const isRejected = req.status === 'rejected';
-              const isCompleted = req.status === 'completed';
 
               return (
                 <div
@@ -315,8 +313,6 @@ export function PayoutView() {
                         </div>
                         {isPending && <span className="badge" style={{ background: "#fef3c7", color: "#92400e" }}>⏳ Pending</span>}
                         {isApproved && <span className="badge" style={{ background: "#dbeafe", color: "#1e40af" }}>✓ Approved</span>}
-                        {isRejected && <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>✕ Rejected</span>}
-                        {isCompleted && <span className="badge badge-green">✓ Completed</span>}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--ash-600)", marginBottom: 4 }}>
                         To: {req.bankName} ****{req.accountLast4}
@@ -324,11 +320,6 @@ export function PayoutView() {
                       <div style={{ fontSize: 12, color: "var(--ash-600)" }}>
                         ≈ ₹{req.amountInr} at {req.exchangeRate} INR/USDT
                       </div>
-                      {req.rejectionReason && (
-                        <div style={{ fontSize: 12, color: "#dc2626", marginTop: 6, padding: 8, background: "#fee2e2", borderRadius: "var(--r-sm)" }}>
-                          <strong>Reason:</strong> {req.rejectionReason}
-                        </div>
-                      )}
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontSize: 11, color: "var(--ash-500)" }}>
@@ -337,11 +328,6 @@ export function PayoutView() {
                       {req.approvedAt && (
                         <div style={{ fontSize: 10, color: "var(--ash-500)", marginTop: 2 }}>
                           Approved: {req.approvedAt}
-                        </div>
-                      )}
-                      {req.completedAt && (
-                        <div style={{ fontSize: 10, color: "var(--ash-500)", marginTop: 2 }}>
-                          Completed: {req.completedAt}
                         </div>
                       )}
                     </div>
