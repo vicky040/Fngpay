@@ -6,6 +6,7 @@ import { createPayment, isNowPaymentsConfigured } from "@/lib/nowpayments";
 
 const ONBOARDING_FEE_USDT = 200;
 const WEBSITE_URL = "https://fngpay.vercel.app";
+// Production mode active - Last updated: 2026-09-24
 
 const WELCOME = `🎯 <b>Welcome to FNGPAY Partner Panel!</b>
 
