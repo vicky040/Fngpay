@@ -76,7 +76,7 @@ function SidebarContent({ agent, wallet, onNavigate }: { agent: ShellAgent; wall
 
       {NAV.map((n) => {
         // Hide admin link for non-admin users
-        if (n.href === '/admin' && agent.agentCode !== 'PV-ADMIN1' && agent.agentCode !== 'PV-ADMIN') {
+        if (n.href === '/admin' && agent.agentCode !== 'PV-ADMIN1') {
           return null;
         }
 

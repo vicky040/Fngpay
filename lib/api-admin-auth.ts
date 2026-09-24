@@ -2,7 +2,7 @@ import { requireApiAgent } from './api-auth';
 import { NextResponse } from 'next/server';
 
 /**
- * Require admin access for API routes (PV-ADMIN1 and PV-ADMIN)
+ * Require admin access for API routes (PV-ADMIN1 only)
  *
  * Use this in API route handlers to protect admin endpoints.
  * Returns 403 error for non-admin users.
@@ -22,11 +22,11 @@ export async function requireApiAdmin() {
   const auth = await requireApiAgent();
   if ('error' in auth) return auth;
 
-  // Check if admin (PV-ADMIN1 or PV-ADMIN)
-  if (auth.agent.agentCode !== 'PV-ADMIN1' && auth.agent.agentCode !== 'PV-ADMIN') {
+  // Check if admin (only PV-ADMIN1)
+  if (auth.agent.agentCode !== 'PV-ADMIN1') {
     return {
       error: NextResponse.json(
-        { error: 'Admin access required. Only PV-ADMIN1 and PV-ADMIN can access this endpoint.' },
+        { error: 'Admin access required. Only PV-ADMIN1 can access this endpoint.' },
         { status: 403 }
       )
     };
