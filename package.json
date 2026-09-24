@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.js",
+    "db:delete-agent": "node scripts/delete-agent.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
