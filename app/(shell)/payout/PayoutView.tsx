@@ -19,18 +19,13 @@ type HistoryEntry = {
   bal: string;
 };
 
-type PayoutData = {
-  balanceUsdt: string;
-  approxInr: string;
-  exchangeRate: string;
-  banks: Bank[];
-};
-
 export function PayoutView() {
-  const [data, setData] = useState<PayoutData | null>(null);
+  const [balanceUsdt, setBalanceUsdt] = useState<string>("0.00");
+  const [approxInr, setApproxInr] = useState<string>("0");
+  const [exchangeRate, setExchangeRate] = useState<string>("104");
+  const [banks, setBanks] = useState<Bank[]>([]);
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"idle" | "form">("idle");
   const [amountUsdt, setAmountUsdt] = useState("");
   const [selectedBankId, setSelectedBankId] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -42,21 +37,39 @@ export function PayoutView() {
 
   async function loadData() {
     try {
-      // Load balance and banks from payout API
+      // Load balance, rate, and banks
       const payoutRes = await fetch("/api/payout");
-      if (!payoutRes.ok) throw new Error(`API returned ${payoutRes.status}`);
-      const payoutData = await payoutRes.json();
-      setData(payoutData);
-      if (payoutData.banks.length > 0) {
-        setSelectedBankId(payoutData.banks[0].id);
+      if (payoutRes.ok) {
+        const payoutData = await payoutRes.json();
+        setBalanceUsdt(payoutData.balanceUsdt || "0.00");
+        setApproxInr(payoutData.approxInr || "0");
+        setExchangeRate(payoutData.exchangeRate || "104");
+        setBanks(payoutData.banks || []);
+        if (payoutData.banks && payoutData.banks.length > 0) {
+          setSelectedBankId(payoutData.banks[0].id);
+        }
       }
 
-      // Load withdrawal history from history API
+      // Load banks directly if payout API didn't return them
+      if (!banks || banks.length === 0) {
+        const banksRes = await fetch("/api/banks");
+        if (banksRes.ok) {
+          const banksData = await banksRes.json();
+          if (banksData.banks && banksData.banks.length > 0) {
+            setBanks(banksData.banks);
+            setSelectedBankId(banksData.banks[0].id);
+          }
+        }
+      }
+
+      // Load withdrawal history
       const historyRes = await fetch("/api/history?filter=withdrawals");
-      if (!historyRes.ok) throw new Error(`API returned ${historyRes.status}`);
-      const historyData = await historyRes.json();
-      setEntries(historyData.entries);
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        setEntries(historyData.entries || []);
+      }
     } catch (err) {
+      console.error('Error loading payout data:', err);
       setError(err instanceof Error ? err.message : "Failed to load payout data");
     }
   }
@@ -66,7 +79,7 @@ export function PayoutView() {
     setFormError(null);
 
     const amount = Number(amountUsdt);
-    const MIN_WITHDRAWAL = 100; // Minimum 100 USDT
+    const MIN_WITHDRAWAL = 100;
 
     if (!Number.isFinite(amount) || amount < MIN_WITHDRAWAL) {
       setFormError(`Minimum withdrawal is ${MIN_WITHDRAWAL} USDT`);
@@ -78,9 +91,9 @@ export function PayoutView() {
       return;
     }
 
-    const balance = Number(data?.balanceUsdt.replace(/,/g, '') || 0);
+    const balance = Number(balanceUsdt.replace(/,/g, ''));
     if (amount > balance) {
-      setFormError(`Insufficient balance. You have ${data?.balanceUsdt} USDT`);
+      setFormError(`Insufficient balance. You have ${balanceUsdt} USDT`);
       return;
     }
 
@@ -101,27 +114,15 @@ export function PayoutView() {
         return;
       }
 
-      // Success!
       alert("✅ Withdrawal request submitted! Admin will review shortly.");
-      setView("idle");
       setAmountUsdt("");
-      await loadData(); // Reload to show new request
+      await loadData();
     } catch {
       setFormError("Couldn't create withdrawal request — please try again");
     } finally {
       setSubmitting(false);
     }
   }
-
-  if (error) {
-    return <div className="field-error" style={{ marginTop: 14 }}>{error}</div>;
-  }
-
-  if (!data || entries === null) {
-    return <div style={{ fontSize: 13, color: "var(--ash-500)", marginTop: 14 }}>Loading…</div>;
-  }
-
-  const hasBanks = data.banks.length > 0;
 
   return (
     <>
@@ -134,70 +135,84 @@ export function PayoutView() {
         </div>
       </div>
 
+      {error && (
+        <div className="field-error" style={{ marginTop: 14 }}>{error}</div>
+      )}
+
       {/* Balance Card */}
       <div style={{ background: "var(--moss-50)", border: "1px solid var(--moss-100)", borderRadius: "var(--r-lg)", padding: 16, marginTop: 14 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--moss-600)" }}>
-              Available Balance
-            </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: "var(--ink-900)", marginTop: 6 }}>
-              {data.balanceUsdt} USDT
-            </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>
-              ≈ ₹{data.approxInr}
-            </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ash-500)", marginTop: 2 }}>
-              Rate: {data.exchangeRate} INR/USDT
-            </div>
-          </div>
-
-          {hasBanks ? (
-            <button
-              type="button"
-              onClick={() => setView(view === "form" ? "idle" : "form")}
-              className="btn-primary"
-              style={{ height: 42, minWidth: 140 }}
-            >
-              {view === "form" ? "Cancel" : "Request Withdrawal"}
-            </button>
-          ) : null}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--moss-600)" }}>
+          Available Balance
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: "var(--ink-900)", marginTop: 6 }}>
+          {balanceUsdt} USDT
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>
+          ≈ ₹{approxInr}
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ash-500)", marginTop: 2 }}>
+          Rate: {exchangeRate} INR/USDT
         </div>
       </div>
 
-      {/* No Banks Warning */}
-      {!hasBanks && (
-        <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: "var(--r-lg)", padding: 14, marginTop: 12 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <Icon name="info" style={{ width: 18, height: 18, color: "#f59e0b", flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: "#92400e", marginBottom: 4 }}>No bank accounts added</div>
-              <div style={{ fontSize: 12.5, color: "#78350f", marginBottom: 8 }}>
-                You need to add at least one bank account before requesting withdrawals.
+      {/* Withdrawal Request Form */}
+      <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 16, marginTop: 12 }}>
+        <div style={{ fontSize: 15.5, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
+          Request Withdrawal
+        </div>
+
+        {banks.length === 0 ? (
+          <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: "var(--r-md)", padding: 14, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <Icon name="info" style={{ width: 18, height: 18, color: "#f59e0b", flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: "#92400e", marginBottom: 4 }}>No bank accounts added</div>
+                <div style={{ fontSize: 12.5, color: "#78350f", marginBottom: 8 }}>
+                  You need to add at least one bank account before requesting withdrawals.
+                </div>
+                <Link href="/banks" className="btn-secondary" style={{ height: 36, fontSize: 13, display: "inline-flex", alignItems: "center" }}>
+                  Add Bank Account
+                </Link>
               </div>
-              <Link href="/banks" className="btn-secondary" style={{ height: 36, fontSize: 13, display: "inline-flex", alignItems: "center" }}>
-                Add Bank Account
-              </Link>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Withdrawal Request Form */}
-      {view === "form" && hasBanks && (
-        <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 16, marginTop: 12 }}>
-          <div style={{ fontSize: 15.5, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
-            Request Withdrawal
-          </div>
-
+        ) : (
           <form onSubmit={submitWithdrawal}>
-            {/* Select Bank */}
+            {/* Amount Input */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-900)", marginBottom: 6 }}>
+                Amount (USDT)
+              </div>
+              <input
+                type="number"
+                step="0.01"
+                min="100"
+                value={amountUsdt}
+                onChange={(e) => setAmountUsdt(e.target.value)}
+                placeholder="Minimum 100 USDT"
+                style={{
+                  width: "100%",
+                  height: 42,
+                  borderRadius: "var(--r-md)",
+                  border: "1px solid var(--border)",
+                  padding: "0 12px",
+                  fontSize: 14,
+                }}
+              />
+              {amountUsdt && Number(amountUsdt) > 0 && (
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>
+                  = ₹{(Number(amountUsdt) * Number(exchangeRate)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 })}
+                </div>
+              )}
+            </div>
+
+            {/* Select Bank - Below Amount */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-900)", marginBottom: 8 }}>
                 Select Bank Account
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {data.banks.map((bank) => (
+                {banks.map((bank) => (
                   <label
                     key={bank.id}
                     style={{
@@ -228,34 +243,6 @@ export function PayoutView() {
               </div>
             </div>
 
-            {/* Amount Input */}
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-900)", marginBottom: 6 }}>
-                Amount (USDT)
-              </div>
-              <input
-                type="number"
-                step="0.01"
-                min="100"
-                value={amountUsdt}
-                onChange={(e) => setAmountUsdt(e.target.value)}
-                placeholder="Minimum 100 USDT"
-                style={{
-                  width: "100%",
-                  height: 42,
-                  borderRadius: "var(--r-md)",
-                  border: "1px solid var(--border)",
-                  padding: "0 12px",
-                  fontSize: 14,
-                }}
-              />
-              {amountUsdt && Number(amountUsdt) > 0 && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>
-                  = ₹{(Number(amountUsdt) * Number(data.exchangeRate)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 })}
-                </div>
-              )}
-            </div>
-
             {formError && <div className="field-error" style={{ marginBottom: 12 }}>{formError}</div>}
 
             <button
@@ -264,71 +251,73 @@ export function PayoutView() {
               disabled={submitting}
               style={{ width: "100%", height: 42 }}
             >
-              {submitting ? "Submitting..." : "Submit Request"}
+              {submitting ? "Submitting..." : "Submit Withdrawal Request"}
             </button>
           </form>
-        </div>
-      )}
-
-      {/* Withdrawal History */}
-      <div style={{ marginTop: 20 }}>
-        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
-          Withdrawal History
-        </div>
-
-        {entries.length === 0 ? (
-          <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 24, textAlign: "center" }}>
-            <Icon name="arrow-right" style={{ width: 32, height: 32, color: "var(--ash-400)", margin: "0 auto 12px" }} />
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-800)", marginBottom: 4 }}>
-              No withdrawals yet
-            </div>
-            <div style={{ fontSize: 12, color: "var(--ash-500)" }}>
-              Your withdrawal history will appear here
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {entries.map((e, idx) => (
-              <div
-                key={idx}
-                style={{
-                  background: "var(--paper)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--r-lg)",
-                  padding: 16,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <Icon name="arrow-right" style={{ width: 16, height: 16, color: "#ef4444" }} />
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-900)", textTransform: "uppercase", letterSpacing: ".02em" }}>
-                        {e.kind}
-                      </div>
-                      <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>Debit</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--ash-600)", marginLeft: 24, marginBottom: 4 }}>
-                      {e.sub}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, color: "#dc2626" }}>
-                      {e.amount}
-                    </div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ash-500)", marginTop: 2 }}>
-                      {e.bal}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ fontSize: 11, color: "var(--ash-500)", marginLeft: 24 }}>
-                  {e.date}
-                </div>
-              </div>
-            ))}
-          </div>
         )}
       </div>
+
+      {/* Withdrawal History */}
+      {entries && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink-900)", marginBottom: 12 }}>
+            Withdrawal History
+          </div>
+
+          {entries.length === 0 ? (
+            <div style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 24, textAlign: "center" }}>
+              <Icon name="arrow-right" style={{ width: 32, height: 32, color: "var(--ash-400)", margin: "0 auto 12px" }} />
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-800)", marginBottom: 4 }}>
+                No withdrawals yet
+              </div>
+              <div style={{ fontSize: 12, color: "var(--ash-500)" }}>
+                Your withdrawal history will appear here
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {entries.map((e, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    background: "var(--paper)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r-lg)",
+                    padding: 16,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <Icon name="arrow-right" style={{ width: 16, height: 16, color: "#ef4444" }} />
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-900)", textTransform: "uppercase", letterSpacing: ".02em" }}>
+                          {e.kind}
+                        </div>
+                        <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>Debit</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ash-600)", marginLeft: 24, marginBottom: 4 }}>
+                        {e.sub}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, color: "#dc2626" }}>
+                        {e.amount}
+                      </div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ash-500)", marginTop: 2 }}>
+                        {e.bal}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 11, color: "var(--ash-500)", marginLeft: 24 }}>
+                    {e.date}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }
