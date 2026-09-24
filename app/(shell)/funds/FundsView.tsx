@@ -101,11 +101,11 @@ export function FundsView() {
     setFormError(null);
     const amountInr = Number(amount);
 
-    // Minimum deposit: 20,000 USDT (at 104 INR/USDT = ₹20,80,000)
-    const MIN_DEPOSIT_INR = 2080000;
+    // Minimum deposit: 500 USDT (at 104 INR/USDT = ₹52,000)
+    const MIN_DEPOSIT_INR = 52000;
 
     if (!Number.isFinite(amountInr) || amountInr < MIN_DEPOSIT_INR) {
-      setFormError(`Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (20,000 USDT at 104 INR/USDT).`);
+      setFormError(`Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (500 USDT at 104 INR/USDT).`);
       return;
     }
     setSubmitting(true);
@@ -147,6 +147,43 @@ export function FundsView() {
     setView("form");
   }
 
+  async function paySecurityDeposit() {
+    setFormError(null);
+    setSubmitting(true);
+
+    // 2,000 USDT at 104 INR/USDT = ₹2,08,000
+    const securityDepositInr = 208000;
+
+    try {
+      const res = await fetch("/api/funds/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountInr: securityDepositInr, isSecurityDeposit: true }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setFormError(body.error ?? "Couldn't start security deposit payment.");
+        return;
+      }
+      setSession({
+        pay_address: body.payAddress,
+        pay_amount: body.payAmount,
+        pay_currency: body.payCurrency,
+        price_amount: body.priceAmount,
+        price_currency: body.priceCurrency,
+        provider_status: body.status,
+        status: "active",
+        qrDataUri: body.qrDataUri,
+      });
+      setSessionId(body.sessionId);
+      setView("idle");
+    } catch {
+      setFormError("Couldn't start security deposit payment — please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (error) return <div className="field-error" style={{ marginTop: 12 }}>{error}</div>;
   if (!data) return <div style={{ fontSize: 13, color: "var(--ash-500)", marginTop: 16 }}>Loading…</div>;
 
@@ -165,6 +202,7 @@ export function FundsView() {
         <div style={{ fontSize: 12.5, color: "var(--ash-600)", marginTop: 3 }}>
           Pay in INR and receive a TRC20 USDT address. Sessions stay valid for 20 minutes.
         </div>
+        {formError && view === "idle" ? <div className="field-error" style={{ marginTop: 10 }}>{formError}</div> : null}
       </div>
 
       {!data.depositsConfigured ? (
@@ -182,11 +220,11 @@ export function FundsView() {
           <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-900)" }}>Enter amount (INR)</div>
           <input
             type="number"
-            min={100}
+            min={52000}
             step="1"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="e.g. 5000"
+            placeholder="Minimum ₹52,000 (500 USDT)"
             style={{
               marginTop: 10,
               width: "100%",
@@ -267,38 +305,53 @@ export function FundsView() {
       ) : null}
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10, marginTop: 12 }}>
-        <div style={{ background: "var(--canvas)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 13 }}>
+        <button
+          type="button"
+          onClick={() => !data.securityDepositCompleted && data.depositsConfigured && paySecurityDeposit()}
+          disabled={data.securityDepositCompleted || !data.depositsConfigured || submitting}
+          style={{
+            background: data.securityDepositCompleted ? "var(--canvas)" : "var(--paper)",
+            border: data.securityDepositCompleted ? "1px solid var(--border)" : "1px solid var(--moss-500)",
+            borderRadius: "var(--r-lg)",
+            padding: 13,
+            textAlign: "left",
+            cursor: !data.securityDepositCompleted && data.depositsConfigured && !submitting ? "pointer" : "default",
+            opacity: !data.depositsConfigured ? 0.6 : 1,
+          }}
+        >
           <div
             style={{
               width: 32,
               height: 32,
               borderRadius: "var(--r-md)",
-              background: "var(--paper)",
-              border: "1px solid var(--border)",
+              background: data.securityDepositCompleted ? "var(--paper)" : "var(--moss-50)",
+              border: data.securityDepositCompleted ? "1px solid var(--border)" : "1px solid var(--moss-100)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "var(--ash-500)",
+              color: data.securityDepositCompleted ? "var(--ash-500)" : "var(--moss-600)",
             }}
           >
             <Icon name="info" style={{ width: 16, height: 16 }} />
           </div>
           <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-800)", marginTop: 10 }}>Security Deposit</div>
           <div style={{ fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>One-time 2,000 USDT</div>
-          <div style={{ fontSize: 12, color: "var(--ash-500)", marginTop: 8 }}>{data.securityDepositCompleted ? "Completed" : "Not completed yet"}</div>
-        </div>
+          <div style={{ fontSize: 12, fontWeight: 500, color: data.securityDepositCompleted ? "var(--ash-500)" : "var(--moss-600)", marginTop: 8 }}>
+            {data.securityDepositCompleted ? "✅ Completed" : submitting ? "Processing..." : "Pay Now →"}
+          </div>
+        </button>
         <button
           type="button"
-          onClick={() => data.depositsConfigured && setView("form")}
-          disabled={!data.depositsConfigured || view === "form"}
+          onClick={() => data.securityDepositCompleted && data.depositsConfigured && setView("form")}
+          disabled={!data.securityDepositCompleted || !data.depositsConfigured || view === "form"}
           style={{
             background: "var(--paper)",
-            border: "1px solid var(--moss-500)",
+            border: data.securityDepositCompleted ? "1px solid var(--moss-500)" : "1px solid var(--border)",
             borderRadius: "var(--r-lg)",
             padding: 13,
             textAlign: "left",
-            cursor: data.depositsConfigured && view !== "form" ? "pointer" : "default",
-            opacity: data.depositsConfigured ? 1 : 0.6,
+            cursor: data.securityDepositCompleted && data.depositsConfigured && view !== "form" ? "pointer" : "default",
+            opacity: data.securityDepositCompleted && data.depositsConfigured ? 1 : 0.6,
           }}
         >
           <div
@@ -317,9 +370,11 @@ export function FundsView() {
             <Icon name="budget" style={{ width: 16, height: 16 }} />
           </div>
           <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-900)", marginTop: 10 }}>Add Funds</div>
-          <div style={{ fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>Top up your wallet with any amount</div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: "var(--moss-600)", marginTop: 8 }}>
-            {session ? "Start another →" : "Select →"}
+          <div style={{ fontSize: 12, color: "var(--ash-600)", marginTop: 4 }}>
+            {data.securityDepositCompleted ? "Top up wallet (Min. 500 USDT)" : "Complete security deposit first"}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 500, color: data.securityDepositCompleted ? "var(--moss-600)" : "var(--ash-500)", marginTop: 8 }}>
+            {data.securityDepositCompleted ? (session ? "Start another →" : "Select →") : "Locked"}
           </div>
         </button>
       </div>

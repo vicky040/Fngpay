@@ -17,14 +17,41 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const amountInr = Number(body.amountInr);
+  const isSecurityDeposit = body.isSecurityDeposit === true;
 
-  // Minimum deposit: 20,000 USDT (at 104 INR/USDT = ₹20,80,000)
-  const MIN_DEPOSIT_INR = 2080000; // ₹20.8 lakhs
+  // Security deposit: 2,000 USDT (₹2,08,000)
+  // Regular deposit: Minimum 500 USDT (₹52,000)
+  const SECURITY_DEPOSIT_INR = 208000; // ₹2.08 lakhs
+  const MIN_DEPOSIT_INR = 52000; // ₹52,000
 
-  if (!Number.isFinite(amountInr) || amountInr < MIN_DEPOSIT_INR) {
-    return NextResponse.json({
-      error: `Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (20,000 USDT at 104 INR/USDT).`
-    }, { status: 400 });
+  // Check security deposit status for regular deposits
+  if (!isSecurityDeposit) {
+    const agentCheck = await pool.query(
+      'SELECT security_deposit_completed FROM agents WHERE id = $1',
+      [auth.agent.id]
+    );
+
+    if (agentCheck.rows.length === 0 || !agentCheck.rows[0].security_deposit_completed) {
+      return NextResponse.json({
+        error: 'Please complete your security deposit (2,000 USDT) before adding funds.'
+      }, { status: 403 });
+    }
+  }
+
+  if (isSecurityDeposit) {
+    // Security deposit must be exactly 2,000 USDT
+    if (amountInr !== SECURITY_DEPOSIT_INR) {
+      return NextResponse.json({
+        error: `Security deposit must be exactly ₹${SECURITY_DEPOSIT_INR.toLocaleString('en-IN')} (2,000 USDT at 104 INR/USDT).`
+      }, { status: 400 });
+    }
+  } else {
+    // Regular deposits must be at least 500 USDT
+    if (!Number.isFinite(amountInr) || amountInr < MIN_DEPOSIT_INR) {
+      return NextResponse.json({
+        error: `Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (500 USDT at 104 INR/USDT).`
+      }, { status: 400 });
+    }
   }
 
   const origin = new URL(request.url).origin;
