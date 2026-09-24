@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:init": "node scripts/init-db.js",
-    "db:delete-agent": "node scripts/delete-agent.js"
+    "db:delete-agent": "node scripts/delete-agent.js",
+    "db:cleanup": "node scripts/cleanup-agents.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
