@@ -17,12 +17,18 @@ export async function GET() {
 
     const balanceUsdt = Number(walletResult.rows[0]?.balance_usdt || 0);
 
-    // Get exchange rate from system settings
-    const rateResult = await pool.query<{ value: string }>(
-      "SELECT value FROM system_settings WHERE key = 'exchange_rate_inr_usdt'"
-    );
+    // Get exchange rate from system settings (fallback to 104 if table doesn't exist)
+    let exchangeRate = 104;
+    try {
+      const rateResult = await pool.query<{ value: string }>(
+        "SELECT value FROM system_settings WHERE key = 'exchange_rate_inr_usdt'"
+      );
+      exchangeRate = Number(rateResult.rows[0]?.value || 104);
+    } catch (e) {
+      // system_settings table doesn't exist yet, use default
+      console.log('system_settings table not found, using default rate 104');
+    }
 
-    const exchangeRate = Number(rateResult.rows[0]?.value || 104);
     const approxInr = balanceUsdt * exchangeRate;
 
     // Get linked banks
@@ -44,43 +50,50 @@ export async function GET() {
       accountLast4: b.account_number_last4,
     }));
 
-    // Get withdrawal requests
-    const withdrawalsResult = await pool.query<{
-      id: number;
-      amount_usdt: string;
-      amount_inr: string;
-      bank_name: string;
-      account_number_last4: string;
-      status: string;
-      created_at: Date;
-      rejection_reason: string | null;
-    }>(
-      `SELECT
-        po.id,
-        po.amount_usdt,
-        po.amount_inr,
-        lb.bank_name,
-        lb.account_number_last4,
-        po.status,
-        po.created_at,
-        po.rejection_reason
-      FROM payout_orders po
-      JOIN linked_banks lb ON lb.id = po.linked_bank_id
-      WHERE po.agent_id = $1
-      ORDER BY po.created_at DESC`,
-      [agentId]
-    );
+    // Get withdrawal requests (handle if new columns don't exist yet)
+    let withdrawals = [];
+    try {
+      const withdrawalsResult = await pool.query<{
+        id: number;
+        amount_usdt: string;
+        amount_inr: string;
+        bank_name: string;
+        account_number_last4: string;
+        status: string;
+        created_at: Date;
+        rejection_reason: string | null;
+      }>(
+        `SELECT
+          po.id,
+          po.amount_usdt,
+          po.amount_inr,
+          lb.bank_name,
+          lb.account_number_last4,
+          po.status,
+          po.created_at,
+          po.rejection_reason
+        FROM payout_orders po
+        JOIN linked_banks lb ON lb.id = po.linked_bank_id
+        WHERE po.agent_id = $1
+        ORDER BY po.created_at DESC`,
+        [agentId]
+      );
 
-    const withdrawals = withdrawalsResult.rows.map((w) => ({
-      id: w.id,
-      amountUsdt: Number(w.amount_usdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      amountInr: Number(w.amount_inr).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 }),
-      bankName: w.bank_name,
-      accountLast4: w.account_number_last4,
-      status: w.status,
-      createdAt: formatEntryDateTime(new Date(w.created_at)),
-      rejectionReason: w.rejection_reason || undefined,
-    }));
+      withdrawals = withdrawalsResult.rows.map((w) => ({
+        id: w.id,
+        amountUsdt: Number(w.amount_usdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        amountInr: Number(w.amount_inr).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 0 }),
+        bankName: w.bank_name,
+        accountLast4: w.account_number_last4,
+        status: w.status,
+        createdAt: formatEntryDateTime(new Date(w.created_at)),
+        rejectionReason: w.rejection_reason || undefined,
+      }));
+    } catch (e) {
+      // New columns don't exist yet, return empty withdrawals
+      console.log('Payout orders columns not migrated yet, returning empty withdrawals');
+      withdrawals = [];
+    }
 
     return NextResponse.json({
       balanceUsdt: balanceUsdt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),

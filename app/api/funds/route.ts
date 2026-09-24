@@ -9,17 +9,25 @@ export async function GET() {
   if ("error" in auth) return auth.error;
   const agentId = auth.agent.id;
 
-  const [agentResult, sessionResult, exchangeRateResult] = await Promise.all([
+  const [agentResult, sessionResult] = await Promise.all([
     pool.query<{ security_deposit_completed: boolean }>("SELECT security_deposit_completed FROM agents WHERE id = $1", [agentId]),
     pool.query<{ id: number; pay_address: string; pay_amount: string; price_amount: string; provider_status: string }>(
       "SELECT id, pay_address, pay_amount, price_amount, provider_status FROM deposit_sessions WHERE agent_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
       [agentId]
     ),
-    // Get exchange rate from system_settings (updated by admin)
-    pool.query<{ value: string }>("SELECT value FROM system_settings WHERE key = 'exchange_rate_inr_usdt'"),
   ]);
 
-  const rate = Number(exchangeRateResult.rows[0]?.value ?? 104);
+  // Get exchange rate from system_settings (fallback to 104 if not exists)
+  let rate = 104;
+  try {
+    const exchangeRateResult = await pool.query<{ value: string }>(
+      "SELECT value FROM system_settings WHERE key = 'exchange_rate_inr_usdt'"
+    );
+    rate = Number(exchangeRateResult.rows[0]?.value ?? 104);
+  } catch (e) {
+    // system_settings table doesn't exist yet, use default
+    console.log('system_settings table not found, using default rate 104');
+  }
   const activeSession = sessionResult.rows[0];
 
   return NextResponse.json({
