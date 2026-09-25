@@ -124,7 +124,7 @@ INSERT INTO faqs (question, answer, sort_order) VALUES
   ('Why do you require 200 USDT before issuing an Agent ID?', 'The amount is recorded against your account during onboarding and is reflected in your wallet history as a verification entry.', 7),
   ('Is there a setup fee?', 'Panel access is tied to the security deposit and account configuration under your agreement. Contact support for the terms applicable to your account.', 8),
   ('How do I access my panel?', 'Log in with your Agent ID or registered email, your login password, and the 6-digit code from your authenticator app.', 9),
-  ('How can I contact support?', 'Message @fngpayofficial on Telegram, or use the FNGPAY Telegram bot @fngpay_partner_bot for instant answers.', 10);
+  ('How can I contact support?', 'Message @fngpayofficial on Telegram, or use the FNGPAY Telegram bot @fngpay_bot for instant answers.', 10);
 
 INSERT INTO referral_stats (agent_id, referral_code, successful_referrals, agentship_requirement, agentship_unlocked)
 VALUES (1, 'PV-ARIJA0DAAA', 0, 3, FALSE);

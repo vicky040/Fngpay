@@ -39,7 +39,7 @@ export default function HelpPage() {
           </div>
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 12, color: "var(--ash-500)" }}>FNGPAY Telegram Bot</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@fngpay_partner_bot</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@fngpay_bot</div>
           </div>
         </Card>
 
@@ -56,7 +56,7 @@ export default function HelpPage() {
           subtitle="Get instant answers on working process, commission, referral, panel access, and more — available in English and Hinglish."
         >
           <div style={{ marginTop: 12 }}>
-            <a href="https://t.me/fngpay_partner_bot" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
+            <a href="https://t.me/fngpay_bot" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
               Open Telegram Bot
             </a>
           </div>
