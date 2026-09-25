@@ -2,8 +2,8 @@
 // as lib/google-oauth.ts and lib/nowpayments.ts elsewhere in this app.
 // https://core.telegram.org/bots/api
 
-// TEMPORARY: Hardcoded for testing - REMOVE BEFORE PRODUCTION
-const HARDCODED_BOT_TOKEN = "8767297655:AAF26tuvZ9aMuVsTAXKOpqzxB7gjfTnAelE";
+// Hardcoded bot token for @fngpay_bot
+const HARDCODED_BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
 
 function apiUrl(method: string): string {
   const token = process.env.TELEGRAM_BOT_TOKEN || HARDCODED_BOT_TOKEN;
