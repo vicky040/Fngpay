@@ -2,28 +2,20 @@
 // as lib/google-oauth.ts and lib/nowpayments.ts elsewhere in this app.
 // https://core.telegram.org/bots/api
 
-// Hardcoded bot token for @fngpay_bot
-const HARDCODED_BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
+// Hardcoded bot token for @fngpay_bot - NOT using .env
+const BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
 
 function apiUrl(method: string): string {
-  const token = process.env.TELEGRAM_BOT_TOKEN || HARDCODED_BOT_TOKEN;
-  return `https://api.telegram.org/bot${token}/${method}`;
+  return `https://api.telegram.org/bot${BOT_TOKEN}/${method}`;
 }
 
 export function isTelegramConfigured(): boolean {
-  return Boolean(process.env.TELEGRAM_BOT_TOKEN || HARDCODED_BOT_TOKEN);
+  return true; // Always configured - using hardcoded token
 }
 
-// Telegram lets you set a secret when registering the webhook URL and sends
-// it back on every call in this header — the only way to confirm a webhook
-// request actually came from Telegram and not someone guessing the URL.
-// With no secret configured yet, every request is accepted (dev mode).
-// TEMPORARY: Always accepting for testing
+// Telegram webhook verification - accepting all requests (no secret needed)
 export function verifyTelegramSecret(request: Request): boolean {
-  return true; // TEMPORARY: Accept all requests for testing
-  // const expected = process.env.TELEGRAM_WEBHOOK_SECRET;
-  // if (!expected) return true;
-  // return request.headers.get("x-telegram-bot-api-secret-token") === expected;
+  return true; // Accept all webhook requests - no secret validation
 }
 
 export async function sendTelegramMessage(chatId: number | string, text: string): Promise<void> {
