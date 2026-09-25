@@ -35,17 +35,17 @@ export default function HelpPage() {
         <Card title="Contact Support" subtitle="Reach the operations team or the FNGPAY bot using the channels below.">
           <div style={{ marginTop: 12 }}>
             <div style={{ fontSize: 12, color: "var(--ash-500)" }}>Official Telegram</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@Payvoraofficial</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@fngpayofficial</div>
           </div>
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 12, color: "var(--ash-500)" }}>FNGPAY Telegram Bot</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@payvorap2p_bot</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@fngpay_partner_bot</div>
           </div>
         </Card>
 
         <Card title="Telegram Support" subtitle="Message official FNGPAY support for onboarding, commission, referral and operational help.">
           <div style={{ marginTop: 12 }}>
-            <a href="https://t.me/Payvoraofficial" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
+            <a href="https://t.me/fngpayofficial" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
               Open Telegram
             </a>
           </div>
@@ -56,7 +56,7 @@ export default function HelpPage() {
           subtitle="Get instant answers on working process, commission, referral, panel access, and more — available in English and Hinglish."
         >
           <div style={{ marginTop: 12 }}>
-            <a href="https://t.me/payvorap2p_bot" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
+            <a href="https://t.me/fngpay_partner_bot" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
               Open Telegram Bot
             </a>
           </div>
