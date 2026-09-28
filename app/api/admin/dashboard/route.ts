@@ -27,6 +27,9 @@ export async function GET() {
       amountUsdt: string;
       amountInr: string;
       bankName: string;
+      accountNumber: string;
+      accountHolder: string;
+      ifscCode: string;
       accountLast4: string;
       status: string;
       createdAt: string;
@@ -43,7 +46,10 @@ export async function GET() {
         amount_usdt: string;
         amount_inr: string;
         bank_name: string;
+        account_number: string | null;
         account_number_last4: string;
+        account_holder: string;
+        ifsc_code: string;
         status: string;
         created_at: Date;
         rejection_reason: string | null;
@@ -56,7 +62,10 @@ export async function GET() {
           po.amount_usdt,
           po.amount_inr,
           lb.bank_name,
+          lb.account_number,
           lb.account_number_last4,
+          lb.account_holder,
+          lb.ifsc_code,
           po.status,
           po.created_at,
           po.rejection_reason
@@ -81,6 +90,9 @@ export async function GET() {
         amountUsdt: Number(w.amount_usdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         amountInr: Math.round(Number(w.amount_inr)).toLocaleString('en-IN'),
         bankName: w.bank_name,
+        accountNumber: w.account_number || `****${w.account_number_last4}`,
+        accountHolder: w.account_holder,
+        ifscCode: w.ifsc_code,
         accountLast4: w.account_number_last4,
         status: w.status,
         createdAt: formatEntryDateTime(new Date(w.created_at)),

@@ -21,14 +21,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Account number and confirmation don't match." }, { status: 400 });
   }
 
-  // Only the last 4 digits are kept — a real deployment would tokenize the
-  // full account number through a payment processor rather than store it.
+  // Store full account number for admin to make payments
   const last4 = accountNumber.slice(-4);
 
   await pool.query(
-    `INSERT INTO linked_banks (agent_id, bank_name, bank_short, account_holder, account_number_last4, ifsc_code)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [auth.agent.id, bankName, bankShort, accountHolder, last4, ifscCode]
+    `INSERT INTO linked_banks (agent_id, bank_name, bank_short, account_holder, account_number, account_number_last4, ifsc_code)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [auth.agent.id, bankName, bankShort, accountHolder, accountNumber, last4, ifscCode]
   );
 
   return NextResponse.json({ ok: true });

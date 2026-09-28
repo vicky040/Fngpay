@@ -45,7 +45,7 @@ export default function HelpPage() {
 
         <Card title="Telegram Support" subtitle="Message official FNGPAY support for onboarding, commission, referral and operational help.">
           <div style={{ marginTop: 12 }}>
-            <a href="https://t.me/fngpayofficial" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
+            <a href="https://t.me/+RpX8P-Z2eJ40MzQ1" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", height: 44, fontSize: 14 }}>
               Open Telegram
             </a>
           </div>

@@ -16,6 +16,9 @@ type WithdrawalRequest = {
   amountUsdt: string;
   amountInr: string;
   bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  ifscCode: string;
   accountLast4: string;
   status: string;
   createdAt: string;
@@ -282,9 +285,36 @@ export function AdminView({ admin }: { admin: Agent }) {
                         <div style={{ fontSize: 13, color: "var(--ash-600)" }}>→ ₹{w.amountInr}</div>
                       </div>
 
-                      {/* Bank */}
-                      <div style={{ fontSize: 12, color: "var(--ash-600)", marginBottom: 6 }}>
-                        To: {w.bankName} ****{w.accountLast4}
+                      {/* Bank Details */}
+                      <div style={{
+                        background: "var(--canvas)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--r-md)",
+                        padding: 12,
+                        marginTop: 8,
+                        marginBottom: 8
+                      }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--ash-500)", marginBottom: 6, textTransform: "uppercase", letterSpacing: ".05em" }}>
+                          Payment Details
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 12, color: "var(--ash-600)" }}>Bank Name:</span>
+                            <span style={{ fontSize: 12, fontWeight: 500, color: "var(--ink-900)" }}>{w.bankName}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 12, color: "var(--ash-600)" }}>Account Holder:</span>
+                            <span style={{ fontSize: 12, fontWeight: 500, color: "var(--ink-900)" }}>{w.accountHolder}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 12, color: "var(--ash-600)" }}>Account Number:</span>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--ink-900)" }}>{w.accountNumber}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 12, color: "var(--ash-600)" }}>IFSC Code:</span>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--ink-900)" }}>{w.ifscCode}</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Status & Time */}
