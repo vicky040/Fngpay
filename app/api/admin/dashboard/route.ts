@@ -90,7 +90,7 @@ export async function GET() {
         amountUsdt: Number(w.amount_usdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         amountInr: Math.round(Number(w.amount_inr)).toLocaleString('en-IN'),
         bankName: w.bank_name,
-        accountNumber: w.account_number || `****${w.account_number_last4}`,
+        accountNumber: w.account_number || w.account_number_last4,
         accountHolder: w.account_holder,
         ifscCode: w.ifsc_code,
         accountLast4: w.account_number_last4,
