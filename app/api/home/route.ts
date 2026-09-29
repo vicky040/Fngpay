@@ -8,16 +8,13 @@ export async function GET() {
   if ("error" in auth) return auth.error;
   const agentId = auth.agent.id;
 
-  const [walletResult, entriesResult] = await Promise.all([
+  const [walletResult, entriesResult, totalsResult] = await Promise.all([
     pool.query<{
       balance_usdt: string;
-      today_payin_inr: string;
-      today_payout_inr: string;
-      today_earning_inr: string;
       security_deposit_completed: boolean;
       agent_code: string;
     }>(
-      `SELECT w.balance_usdt, w.today_payin_inr, w.today_payout_inr, w.today_earning_inr, a.security_deposit_completed, a.agent_code
+      `SELECT w.balance_usdt, a.security_deposit_completed, a.agent_code
        FROM wallets w JOIN agents a ON a.id = w.agent_id
        WHERE w.agent_id = $1`,
       [agentId]
@@ -30,6 +27,15 @@ export async function GET() {
        LIMIT 2`,
       [agentId]
     ),
+    pool.query<{ kind: string; total: string }>(
+      `SELECT
+        kind,
+        SUM(CAST(REGEXP_REPLACE(amount, '[^0-9.-]', '', 'g') AS NUMERIC)) as total
+       FROM wallet_entries
+       WHERE agent_id = $1
+       GROUP BY kind`,
+      [agentId]
+    ),
   ]);
 
   const w = walletResult.rows[0];
@@ -38,11 +44,42 @@ export async function GET() {
   const isDemoAccount = w.agent_code === 'PV-ADMIN' || w.agent_code === 'PV-ADMIN1';
   const depositAmount = isDemoAccount ? '20,000 USDT' : '2,000 USDT';
 
+  // Calculate totals from wallet_entries
+  const totals = {
+    payin: 0,
+    payout: 0,
+    earning: 0,
+  };
+
+  console.log('DEBUG - totalsResult.rows:', JSON.stringify(totalsResult.rows));
+
+  totalsResult.rows.forEach(row => {
+    const amount = Math.abs(parseFloat(row.total));
+    console.log(`DEBUG - Processing: kind=${row.kind}, total=${row.total}, parsed=${amount}`);
+    if (row.kind === 'DEPOSIT') {
+      totals.payin = amount;
+    } else if (row.kind === 'WITHDRAWAL') {
+      totals.payout = amount;
+    } else if (row.kind === 'ADJUSTMENT') {
+      totals.earning = amount;
+    }
+  });
+
+  // Get exchange rate (default 104 INR/USDT)
+  const exchangeRate = 104;
+
+  console.log('DEBUG - Final totals:', totals);
+  console.log('DEBUG - After conversion:', {
+    payin: totals.payin * exchangeRate,
+    payout: totals.payout * exchangeRate,
+    earning: totals.earning * exchangeRate
+  });
+
   const stats = [
     { label: "Security deposit", value: w.security_deposit_completed ? `${depositAmount} ✅ Completed` : "Not completed yet" },
-    { label: "Today's payin", value: formatInr(Number(w.today_payin_inr)) },
-    { label: "Today's payout", value: formatInr(Number(w.today_payout_inr)) },
-    { label: "Today's earning", value: formatInr(Number(w.today_earning_inr)) },
+    { label: "Total payin", value: formatInr(totals.payin * exchangeRate) },
+    { label: "Total payout", value: formatInr(totals.payout * exchangeRate) },
+    { label: "Total earning", value: formatInr(totals.earning * exchangeRate) },
   ];
 
   const entries = entriesResult.rows.map((e) => ({
