@@ -6,8 +6,8 @@ import { isTelegramConfigured } from "@/lib/telegram";
 // (server-side env) and a not-yet-configured bot degrades to a friendly
 // message instead of a dead Telegram deep link — same pattern as
 // /api/auth/google's not-configured redirect.
-// Hardcoded bot username for @fngpay_bot - NOT using .env
-const BOT_USERNAME = "fngpay_bot";
+// Hardcoded bot username - UPDATE THIS WITH YOUR NEW BOT USERNAME
+const BOT_USERNAME = "YOUR_NEW_BOT_USERNAME";
 
 export async function GET(request: Request) {
   const origin = new URL(request.url).origin;

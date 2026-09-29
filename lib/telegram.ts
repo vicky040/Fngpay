@@ -2,8 +2,8 @@
 // as lib/google-oauth.ts and lib/nowpayments.ts elsewhere in this app.
 // https://core.telegram.org/bots/api
 
-// Hardcoded bot token for @fngpay_bot - NOT using .env
-const BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
+// Hardcoded bot token - PASTE YOUR NEW BOT TOKEN HERE
+const BOT_TOKEN = "PASTE_YOUR_NEW_TOKEN_HERE";
 
 function apiUrl(method: string): string {
   return `https://api.telegram.org/bot${BOT_TOKEN}/${method}`;
