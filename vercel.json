@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/fix-bot-description",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}

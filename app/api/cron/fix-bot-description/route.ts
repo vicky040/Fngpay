@@ -17,12 +17,18 @@ function apiUrl(method: string): string {
 
 export async function GET(request: Request) {
   try {
-    // Verify cron secret to prevent unauthorized calls
+    // Optional: Verify cron secret (can be skipped for external cron services)
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET || "fngpay-cron-secret-2024";
+    const secretParam = new URL(request.url).searchParams.get("secret");
 
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Check auth via header or URL parameter
+    const isAuthorized =
+      authHeader === `Bearer ${cronSecret}` ||
+      secretParam === cronSecret;
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: "Unauthorized - provide secret in header or ?secret= parameter" }, { status: 401 });
     }
 
     console.log("🔍 Checking bot description...");
