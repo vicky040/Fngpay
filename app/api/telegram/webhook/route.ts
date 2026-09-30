@@ -80,16 +80,37 @@ export async function POST(request: Request) {
   try {
     console.log("🔍 Checking for active payment sessions...");
     const { rows: activeRows } = await pool.query(
-      "SELECT id FROM telegram_onboarding_sessions WHERE chat_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+      "SELECT id, created_at FROM telegram_onboarding_sessions WHERE chat_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1",
       [chatId]
     );
+
     if (activeRows.length > 0) {
-      console.log("⏳ User has active payment, sending reminder");
-      await sendTelegramMessage(
-        chatId,
-        `Still waiting for your ${ONBOARDING_FEE_USDT} USDT payment — send it to the address I shared and I'll confirm automatically the moment it lands.`
-      );
-      return NextResponse.json({ ok: true });
+      const session = activeRows[0];
+      const sessionAge = Date.now() - new Date(session.created_at).getTime();
+      const FIVE_MINUTES = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+      // If session is older than 5 minutes, expire it and restart
+      if (sessionAge > FIVE_MINUTES) {
+        console.log("⏱️ Payment session expired (>5 min), marking as expired and restarting...");
+
+        // Mark old session as expired
+        await pool.query(
+          "UPDATE telegram_onboarding_sessions SET status = 'expired' WHERE id = $1",
+          [session.id]
+        );
+
+        console.log("🔄 Session expired, continuing to create new payment...");
+        // Continue execution to create new payment (don't return here)
+      } else {
+        // Session is still fresh, send reminder
+        const minutesLeft = Math.ceil((FIVE_MINUTES - sessionAge) / 60000);
+        console.log(`⏳ User has active payment (${minutesLeft} min left), sending reminder`);
+        await sendTelegramMessage(
+          chatId,
+          `Still waiting for your ${ONBOARDING_FEE_USDT} USDT payment — send it to the address I shared and I'll confirm automatically the moment it lands.\n\n⏱️ Time remaining: ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'}`
+        );
+        return NextResponse.json({ ok: true });
+      }
     }
 
     console.log("🔍 Checking for completed sessions...");

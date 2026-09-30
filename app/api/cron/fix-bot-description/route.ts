@@ -11,6 +11,13 @@ Start by linking your account at our platform.
 
 For support, contact: @fngpayofficial`;
 
+// The correct bot about/bio section (shown in Bot Info)
+const CORRECT_ABOUT = `FNGPay P2P Partner Panel
+
+Manage your USDT deposits, withdrawals, and earnings through Telegram.
+
+For support: @fngpayofficial`;
+
 function apiUrl(method: string): string {
   return `https://api.telegram.org/bot${BOT_TOKEN}/${method}`;
 }
@@ -31,53 +38,83 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized - provide secret in header or ?secret= parameter" }, { status: 401 });
     }
 
-    console.log("🔍 Checking bot description...");
+    console.log("🔍 Checking bot description and about section...");
 
-    // Get current bot description
+    let needsFix = false;
+    const fixes: string[] = [];
+
+    // Check and fix Description (Welcome message)
     const getDescRes = await fetch(apiUrl("getMyDescription"), {
       method: "GET",
     });
 
-    if (!getDescRes.ok) {
-      throw new Error(`Failed to get description: ${getDescRes.status}`);
+    if (getDescRes.ok) {
+      const currentData = await getDescRes.json();
+      const currentDescription = currentData.result?.description || "";
+
+      if (currentDescription !== CORRECT_DESCRIPTION) {
+        console.log("⚠️ Bot description is incorrect - fixing...");
+        needsFix = true;
+
+        const setDescRes = await fetch(apiUrl("setMyDescription"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: CORRECT_DESCRIPTION,
+          }),
+        });
+
+        if (setDescRes.ok) {
+          console.log("✅ Bot description fixed");
+          fixes.push("description");
+        }
+      }
     }
 
-    const currentData = await getDescRes.json();
-    const currentDescription = currentData.result?.description || "";
+    // Check and fix Short Description (Bot Info / About section)
+    const getShortDescRes = await fetch(apiUrl("getMyShortDescription"), {
+      method: "GET",
+    });
 
-    console.log("Current description:", currentDescription.substring(0, 50) + "...");
+    if (getShortDescRes.ok) {
+      const currentShortData = await getShortDescRes.json();
+      const currentShortDescription = currentShortData.result?.short_description || "";
 
-    // Check if description needs fixing
-    if (currentDescription === CORRECT_DESCRIPTION) {
-      console.log("✅ Bot description is correct - no action needed");
+      if (currentShortDescription !== CORRECT_ABOUT) {
+        console.log("⚠️ Bot about/bio is incorrect - fixing...");
+        needsFix = true;
+
+        const setShortDescRes = await fetch(apiUrl("setMyShortDescription"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            short_description: CORRECT_ABOUT,
+          }),
+        });
+
+        if (setShortDescRes.ok) {
+          console.log("✅ Bot about/bio fixed");
+          fixes.push("about");
+        }
+      }
+    }
+
+    // Return result
+    if (!needsFix) {
+      console.log("✅ Bot description and about are correct - no action needed");
       return NextResponse.json({
         status: "ok",
-        message: "Bot description is correct",
+        message: "Bot description and about section are correct",
         checked_at: new Date().toISOString(),
       });
     }
 
-    // Description is wrong - fix it
-    console.log("⚠️ Bot description is incorrect - fixing now...");
-
-    const setDescRes = await fetch(apiUrl("setMyDescription"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        description: CORRECT_DESCRIPTION,
-      }),
-    });
-
-    if (!setDescRes.ok) {
-      const errorText = await setDescRes.text();
-      throw new Error(`Failed to set description: ${setDescRes.status} ${errorText}`);
-    }
-
-    console.log("✅ Bot description fixed successfully!");
+    console.log(`✅ Fixed: ${fixes.join(", ")}`);
 
     return NextResponse.json({
       status: "fixed",
-      message: "Bot description was incorrect and has been fixed",
+      message: `Bot ${fixes.join(" and ")} fixed successfully`,
+      fixed_items: fixes,
       fixed_at: new Date().toISOString(),
     });
   } catch (error) {
