@@ -79,7 +79,9 @@ export async function PATCH(
       securityDepositAmount,
       payinCommissionRate,
       payoutCommissionRate,
-      securityDepositCompleted
+      securityDepositCompleted,
+      totalPayinUsdt,
+      totalPayoutUsdt
     } = body;
 
     // Build update query
@@ -108,6 +110,43 @@ export async function PATCH(
     if (securityDepositCompleted !== undefined) {
       updates.push(`security_deposit_completed = $${paramIndex}`);
       values.push(securityDepositCompleted);
+      paramIndex++;
+    }
+
+    // Handle total payin/payout updates by calculating adjustments
+    if (totalPayinUsdt !== undefined) {
+      // Get current total from wallet_entries
+      const totalsResult = await pool.query(`
+        SELECT
+          SUM(CAST(REGEXP_REPLACE(amount, '[^0-9.-]', '', 'g') AS NUMERIC)) as total
+        FROM wallet_entries
+        WHERE agent_id = $1 AND kind = 'DEPOSIT'
+      `, [userId]);
+
+      const currentTotal = Math.abs(parseFloat(totalsResult.rows[0]?.total || '0'));
+      const targetTotal = parseFloat(totalPayinUsdt);
+      const adjustment = targetTotal - currentTotal;
+
+      updates.push(`admin_payin_adjustment = $${paramIndex}`);
+      values.push(adjustment);
+      paramIndex++;
+    }
+
+    if (totalPayoutUsdt !== undefined) {
+      // Get current total from wallet_entries
+      const totalsResult = await pool.query(`
+        SELECT
+          SUM(CAST(REGEXP_REPLACE(amount, '[^0-9.-]', '', 'g') AS NUMERIC)) as total
+        FROM wallet_entries
+        WHERE agent_id = $1 AND kind = 'WITHDRAWAL'
+      `, [userId]);
+
+      const currentTotal = Math.abs(parseFloat(totalsResult.rows[0]?.total || '0'));
+      const targetTotal = parseFloat(totalPayoutUsdt);
+      const adjustment = targetTotal - currentTotal;
+
+      updates.push(`admin_payout_adjustment = $${paramIndex}`);
+      values.push(adjustment);
       paramIndex++;
     }
 

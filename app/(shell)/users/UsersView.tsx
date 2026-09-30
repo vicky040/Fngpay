@@ -36,6 +36,8 @@ export function UsersView({ admin }: { admin: Admin }) {
     securityDepositAmount: 2000,
     payinCommissionRate: 6,
     payoutCommissionRate: 2,
+    totalPayinUsdt: 0,
+    totalPayoutUsdt: 0,
   });
 
   useEffect(() => {
@@ -62,6 +64,8 @@ export function UsersView({ admin }: { admin: Admin }) {
       securityDepositAmount: user.securityDepositAmount,
       payinCommissionRate: user.payinCommissionRate,
       payoutCommissionRate: user.payoutCommissionRate,
+      totalPayinUsdt: user.totalPayinUsdt,
+      totalPayoutUsdt: user.totalPayoutUsdt,
     });
   }
 
@@ -323,6 +327,52 @@ export function UsersView({ admin }: { admin: Admin }) {
                     fontFamily: "var(--font-mono)"
                   }}
                 />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--ink-800)", marginBottom: "8px" }}>
+                  Total Payin (USDT)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editForm.totalPayinUsdt}
+                  onChange={(e) => setEditForm({ ...editForm, totalPayinUsdt: parseFloat(e.target.value) || 0 })}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    fontSize: "14px",
+                    border: "2px solid var(--border)",
+                    borderRadius: "6px",
+                    fontFamily: "var(--font-mono)"
+                  }}
+                />
+                <div style={{ fontSize: "11px", color: "var(--ash-500)", marginTop: "4px" }}>
+                  💡 Admin can adjust total payin amount for corrections
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "var(--ink-800)", marginBottom: "8px" }}>
+                  Total Payout (USDT)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editForm.totalPayoutUsdt}
+                  onChange={(e) => setEditForm({ ...editForm, totalPayoutUsdt: parseFloat(e.target.value) || 0 })}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    fontSize: "14px",
+                    border: "2px solid var(--border)",
+                    borderRadius: "6px",
+                    fontFamily: "var(--font-mono)"
+                  }}
+                />
+                <div style={{ fontSize: "11px", color: "var(--ash-500)", marginTop: "4px" }}>
+                  💡 Admin can adjust total payout amount for corrections
+                </div>
               </div>
             </div>
 

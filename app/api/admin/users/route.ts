@@ -19,6 +19,8 @@ export async function GET() {
         COALESCE(a.security_deposit_amount, 2000) as security_deposit_amount,
         COALESCE(a.payin_commission_rate, 6) as payin_commission_rate,
         COALESCE(a.payout_commission_rate, 2) as payout_commission_rate,
+        COALESCE(a.admin_payin_adjustment, 0) as admin_payin_adjustment,
+        COALESCE(a.admin_payout_adjustment, 0) as admin_payout_adjustment,
         COALESCE(w.balance_usdt, 0) as balance_usdt
       FROM agents a
       LEFT JOIN wallets w ON w.agent_id = a.id
@@ -52,6 +54,10 @@ export async function GET() {
           else if (t.kind === 'ADJUSTMENT') totals.earning = amount;
         });
 
+        // Add admin adjustments to totals
+        const adminPayinAdjustment = parseFloat(row.admin_payin_adjustment || '0');
+        const adminPayoutAdjustment = parseFloat(row.admin_payout_adjustment || '0');
+
         return {
           id: row.id,
           agentCode: row.agent_code,
@@ -63,8 +69,8 @@ export async function GET() {
           payinCommissionRate: parseFloat(row.payin_commission_rate || '6'),
           payoutCommissionRate: parseFloat(row.payout_commission_rate || '2'),
           balanceUsdt: parseFloat(row.balance_usdt || '0'),
-          totalPayinUsdt: totals.payin,
-          totalPayoutUsdt: totals.payout,
+          totalPayinUsdt: totals.payin + adminPayinAdjustment,
+          totalPayoutUsdt: totals.payout + adminPayoutAdjustment,
           totalEarningUsdt: totals.earning,
         };
       })
