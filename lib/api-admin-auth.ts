@@ -1,5 +1,10 @@
-import { requireApiAgent } from './api-auth';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "fngpay-admin-secret-2024"
+);
 
 /**
  * Require admin access for API routes (PV-ADMIN1 and PV-ADMIN)
@@ -19,18 +24,47 @@ import { NextResponse } from 'next/server';
  * ```
  */
 export async function requireApiAdmin() {
-  const auth = await requireApiAgent();
-  if ('error' in auth) return auth;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('session')?.value;
 
-  // Check if admin (PV-ADMIN1 or PV-ADMIN)
-  if (auth.agent.agentCode !== 'PV-ADMIN1' && auth.agent.agentCode !== 'PV-ADMIN') {
+    if (!token) {
+      return {
+        error: NextResponse.json(
+          { error: 'Unauthorized. Please login.' },
+          { status: 401 }
+        )
+      };
+    }
+
+    // Verify JWT
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+
+    // Check if admin
+    if (!payload.isAdmin) {
+      return {
+        error: NextResponse.json(
+          { error: 'Admin access required. Only PV-ADMIN1 and PV-ADMIN can access this endpoint.' },
+          { status: 403 }
+        )
+      };
+    }
+
+    // Return admin info
+    return {
+      admin: {
+        id: payload.agentId as number,
+        agentCode: payload.agentCode as string,
+        email: payload.email as string,
+        fullName: payload.fullName as string || payload.agentCode as string,
+      }
+    };
+  } catch (error) {
     return {
       error: NextResponse.json(
-        { error: 'Admin access required. Only PV-ADMIN1 and PV-ADMIN can access this endpoint.' },
-        { status: 403 }
+        { error: 'Invalid or expired session. Please login again.' },
+        { status: 401 }
       )
     };
   }
-
-  return auth;
 }
