@@ -44,7 +44,7 @@ function SidebarContent({ agent, wallet, onNavigate }: { agent: ShellAgent; wall
   async function logout() {
     onNavigate?.();
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    router.push("/admin-login");
     router.refresh();
   }
 
