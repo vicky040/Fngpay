@@ -38,6 +38,9 @@ export function AdminView({ admin }: { admin: Agent }) {
   const [submitting, setSubmitting] = useState(false);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [splittingId, setSplittingId] = useState<number | null>(null);
+  const [splitAmounts, setSplitAmounts] = useState<string[]>(["", ""]);
+  const [splittingWithdrawal, setSplittingWithdrawal] = useState<WithdrawalRequest | null>(null);
 
   useEffect(() => {
     loadData();
@@ -149,6 +152,74 @@ export function AdminView({ admin }: { admin: Agent }) {
       await loadData();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to reject withdrawal");
+    }
+  }
+
+  function openSplitModal(withdrawal: WithdrawalRequest) {
+    setSplittingWithdrawal(withdrawal);
+    setSplittingId(withdrawal.id);
+    setSplitAmounts(["", ""]);
+  }
+
+  function closeSplitModal() {
+    setSplittingId(null);
+    setSplittingWithdrawal(null);
+    setSplitAmounts(["", ""]);
+  }
+
+  function addSplitField() {
+    setSplitAmounts([...splitAmounts, ""]);
+  }
+
+  function removeSplitField(index: number) {
+    if (splitAmounts.length <= 2) return;
+    setSplitAmounts(splitAmounts.filter((_, i) => i !== index));
+  }
+
+  function updateSplitAmount(index: number, value: string) {
+    const newAmounts = [...splitAmounts];
+    newAmounts[index] = value;
+    setSplitAmounts(newAmounts);
+  }
+
+  async function splitWithdrawal() {
+    if (!splittingWithdrawal) return;
+
+    // Validate all amounts are filled
+    const amounts = splitAmounts.map(a => parseFloat(a)).filter(a => !isNaN(a) && a > 0);
+    if (amounts.length !== splitAmounts.length || amounts.length < 2) {
+      alert("Please fill in all split amounts with valid numbers");
+      return;
+    }
+
+    // Validate total matches
+    const total = amounts.reduce((sum, a) => sum + a, 0);
+    const original = parseFloat(splittingWithdrawal.amountUsdt);
+    if (Math.abs(total - original) > 0.01) {
+      alert(`Split total (${total.toFixed(2)}) must equal original amount (${original.toFixed(2)})`);
+      return;
+    }
+
+    if (!confirm(`Split this ${original} USDT withdrawal into ${amounts.length} parts?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/withdrawals/${splittingWithdrawal.id}/split`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ splits: amounts }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Failed to split withdrawal");
+      }
+
+      const result = await res.json();
+      alert(`✅ Withdrawal split into ${result.splitIds.length} parts! Now you can complete each part individually.`);
+      closeSplitModal();
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to split withdrawal");
     }
   }
 
@@ -363,16 +434,23 @@ export function AdminView({ admin }: { admin: Agent }) {
                     )}
 
                     {w.status === "approved" && (
-                      <div style={{ minWidth: 120 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 120 }}>
                         <button
                           onClick={() => completeWithdrawal(w.id)}
                           className="btn-primary"
-                          style={{ height: 38, fontSize: 13, width: "100%" }}
+                          style={{ height: 38, fontSize: 13 }}
                         >
                           Mark Completed
                         </button>
-                        <div style={{ fontSize: 10, color: "var(--ash-500)", marginTop: 4, textAlign: "center" }}>
-                          After bank transfer
+                        <button
+                          onClick={() => openSplitModal(w)}
+                          className="btn-secondary"
+                          style={{ height: 38, fontSize: 13 }}
+                        >
+                          Split Withdrawal
+                        </button>
+                        <div style={{ fontSize: 10, color: "var(--ash-500)", marginTop: -4, textAlign: "center" }}>
+                          Split into parts
                         </div>
                       </div>
                     )}
@@ -433,6 +511,183 @@ export function AdminView({ admin }: { admin: Agent }) {
           </div>
         )}
       </div>
+
+      {/* Split Withdrawal Modal */}
+      {splittingId && splittingWithdrawal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "20px",
+          }}
+          onClick={closeSplitModal}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "12px",
+              maxWidth: "600px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflow: "auto",
+              padding: "24px",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: "20px", fontWeight: "700", color: "var(--ink-900)", marginBottom: "8px" }}>
+              Split Withdrawal
+            </h3>
+            <p style={{ fontSize: "14px", color: "var(--ash-600)", marginBottom: "20px" }}>
+              {splittingWithdrawal.agentName} - Original: <strong>{splittingWithdrawal.amountUsdt} USDT</strong>
+            </p>
+
+            <div style={{ background: "var(--moss-50)", borderRadius: "8px", padding: "12px", marginBottom: "20px" }}>
+              <div style={{ fontSize: "13px", color: "var(--moss-700)", marginBottom: "4px" }}>
+                💡 Split this withdrawal into multiple parts for easier processing
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--ash-600)" }}>
+                Example: 2000 USDT → [200, 200, 300, 500, 800]
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                <label style={{ fontSize: "14px", fontWeight: "600", color: "var(--ink-800)" }}>
+                  Split Amounts (USDT)
+                </label>
+                <button
+                  onClick={addSplitField}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    background: "var(--moss-100)",
+                    color: "var(--moss-700)",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  + Add Part
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {splitAmounts.map((amount, index) => (
+                  <div key={index} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <div style={{ width: "30px", fontSize: "13px", fontWeight: "600", color: "var(--ash-600)" }}>
+                      {index + 1}.
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={amount}
+                      onChange={(e) => updateSplitAmount(index, e.target.value)}
+                      placeholder="Enter amount"
+                      style={{
+                        flex: 1,
+                        padding: "10px 12px",
+                        fontSize: "14px",
+                        border: "2px solid var(--border)",
+                        borderRadius: "6px",
+                        fontFamily: "var(--font-mono)",
+                      }}
+                    />
+                    {splitAmounts.length > 2 && (
+                      <button
+                        onClick={() => removeSplitField(index)}
+                        style={{
+                          padding: "8px 12px",
+                          fontSize: "12px",
+                          background: "#FEE2E2",
+                          color: "#991B1B",
+                          border: "none",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Total Check */}
+              {(() => {
+                const amounts = splitAmounts.map(a => parseFloat(a)).filter(a => !isNaN(a) && a > 0);
+                const total = amounts.reduce((sum, a) => sum + a, 0);
+                const original = parseFloat(splittingWithdrawal.amountUsdt);
+                const diff = total - original;
+
+                return (
+                  <div style={{
+                    marginTop: "12px",
+                    padding: "10px 12px",
+                    background: Math.abs(diff) < 0.01 ? "var(--moss-50)" : "var(--canvas)",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontFamily: "var(--font-mono)",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <span>Total:</span>
+                      <strong>{total.toFixed(2)} USDT</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", color: Math.abs(diff) < 0.01 ? "var(--moss-700)" : "#ef4444" }}>
+                      <span>Status:</span>
+                      <strong>
+                        {Math.abs(diff) < 0.01 ? "✓ Perfect!" : `${diff > 0 ? "+" : ""}${diff.toFixed(2)} USDT difference`}
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={closeSplitModal}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  background: "var(--ash-100)",
+                  color: "var(--ink-800)",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={splitWithdrawal}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  background: "var(--moss-500)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                }}
+              >
+                Split Withdrawal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
