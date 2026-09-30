@@ -44,10 +44,10 @@ export async function POST(request: Request) {
       `UPDATE system_settings
        SET value = $1, updated_at = now(), updated_by = $2
        WHERE key = 'exchange_rate_inr_usdt'`,
-      [newRate.toString(), auth.agent.id]
+      [newRate.toString(), auth.admin.id]
     );
 
-    console.log(`Admin ${auth.agent.agentCode} updated exchange rate to ${newRate} INR/USDT`);
+    console.log(`Admin ${auth.admin.agentCode} updated exchange rate to ${newRate} INR/USDT`);
 
     return NextResponse.json({
       success: true,

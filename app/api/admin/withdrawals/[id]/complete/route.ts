@@ -126,7 +126,7 @@ export async function POST(
 
     await client.query('COMMIT');
 
-    console.log(`Admin ${auth.agent.agentCode} completed withdrawal ${withdrawalId} - Deducted ${amountUsdt} USDT from user`);
+    console.log(`Admin ${auth.admin.agentCode} completed withdrawal ${withdrawalId} - Deducted ${amountUsdt} USDT from user`);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -44,10 +44,10 @@ export async function POST(
            approved_by = $1,
            updated_at = now()
        WHERE id = $2`,
-      [auth.agent.id, withdrawalId]
+      [auth.admin.id, withdrawalId]
     );
 
-    console.log(`Admin ${auth.agent.agentCode} approved withdrawal ${withdrawalId}`);
+    console.log(`Admin ${auth.admin.agentCode} approved withdrawal ${withdrawalId}`);
 
     return NextResponse.json({ success: true });
   } catch (error) {

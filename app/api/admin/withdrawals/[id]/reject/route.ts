@@ -54,7 +54,7 @@ export async function POST(
       [reason, withdrawalId]
     );
 
-    console.log(`Admin ${auth.agent.agentCode} rejected withdrawal ${withdrawalId}: ${reason}`);
+    console.log(`Admin ${auth.admin.agentCode} rejected withdrawal ${withdrawalId}: ${reason}`);
 
     return NextResponse.json({ success: true });
   } catch (error) {
