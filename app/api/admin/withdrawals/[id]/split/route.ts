@@ -78,6 +78,7 @@ export async function POST(
         `INSERT INTO payout_orders (
           agent_id,
           linked_bank_id,
+          amount,
           amount_usdt,
           amount_inr,
           exchange_rate,
@@ -88,11 +89,12 @@ export async function POST(
           is_split,
           created_at,
           updated_at
-        ) VALUES ($1, $2, $3, $4, $5, 'approved', $6, $7, $8, true, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'approved', $7, $8, $9, true, NOW(), NOW())
         RETURNING id`,
         [
           original.agent_id,
           original.linked_bank_id,
+          `${splitAmount.toFixed(2)} USDT`, // Old text format for backwards compatibility
           splitAmount,
           splitAmountInr,
           original.exchange_rate,
@@ -118,8 +120,9 @@ export async function POST(
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Split withdrawal error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to split withdrawal';
     return NextResponse.json(
-      { error: 'Failed to split withdrawal' },
+      { error: `Failed to split withdrawal: ${errorMessage}` },
       { status: 500 }
     );
   } finally {
