@@ -113,7 +113,7 @@ export async function PATCH(
       paramIndex++;
     }
 
-    // Handle total payin/payout updates by calculating adjustments
+    // Handle total payin/payout updates by calculating adjustments and creating wallet entries
     if (totalPayinUsdt !== undefined) {
       // Get current total from wallet_entries
       const totalsResult = await pool.query(`
@@ -126,6 +126,43 @@ export async function PATCH(
       const currentTotal = Math.abs(parseFloat(totalsResult.rows[0]?.total || '0'));
       const targetTotal = parseFloat(totalPayinUsdt);
       const adjustment = targetTotal - currentTotal;
+
+      if (adjustment !== 0) {
+        // Get current balance
+        const balanceResult = await pool.query(
+          'SELECT balance_usdt FROM wallets WHERE agent_id = $1',
+          [userId]
+        );
+        const currentBalance = parseFloat(balanceResult.rows[0]?.balance_usdt || '0');
+        const newBalance = currentBalance + adjustment;
+
+        // Update wallet balance
+        await pool.query(
+          'UPDATE wallets SET balance_usdt = $1 WHERE agent_id = $2',
+          [newBalance, userId]
+        );
+
+        // Create wallet entry for the adjustment
+        const adjustmentType = adjustment > 0 ? '+' : '';
+        await pool.query(`
+          INSERT INTO wallet_entries (
+            agent_id,
+            kind,
+            entry_type,
+            sub,
+            occurred_at,
+            amount,
+            balance
+          ) VALUES ($1, $2, $3, $4, NOW(), $5, $6)
+        `, [
+          userId,
+          'ADJUSTMENT',
+          'Admin Adjustment',
+          `Admin Payin Adjustment · ${adjustment > 0 ? 'Added' : 'Corrected'} by ${auth.admin.agentCode}`,
+          `${adjustmentType}${adjustment.toFixed(2)} USDT`,
+          `Bal ${newBalance.toFixed(2)} USDT`
+        ]);
+      }
 
       updates.push(`admin_payin_adjustment = $${paramIndex}`);
       values.push(adjustment);
@@ -144,6 +181,37 @@ export async function PATCH(
       const currentTotal = Math.abs(parseFloat(totalsResult.rows[0]?.total || '0'));
       const targetTotal = parseFloat(totalPayoutUsdt);
       const adjustment = targetTotal - currentTotal;
+
+      if (adjustment !== 0) {
+        // Create wallet entry for the payout adjustment (doesn't affect balance)
+        const adjustmentType = adjustment > 0 ? '+' : '';
+
+        // Get current balance for display
+        const balanceResult = await pool.query(
+          'SELECT balance_usdt FROM wallets WHERE agent_id = $1',
+          [userId]
+        );
+        const currentBalance = parseFloat(balanceResult.rows[0]?.balance_usdt || '0');
+
+        await pool.query(`
+          INSERT INTO wallet_entries (
+            agent_id,
+            kind,
+            entry_type,
+            sub,
+            occurred_at,
+            amount,
+            balance
+          ) VALUES ($1, $2, $3, $4, NOW(), $5, $6)
+        `, [
+          userId,
+          'ADJUSTMENT',
+          'Admin Adjustment',
+          `Admin Payout Adjustment · ${adjustment > 0 ? 'Added' : 'Corrected'} by ${auth.admin.agentCode}`,
+          `${adjustmentType}${adjustment.toFixed(2)} USDT`,
+          `Bal ${currentBalance.toFixed(2)} USDT`
+        ]);
+      }
 
       updates.push(`admin_payout_adjustment = $${paramIndex}`);
       values.push(adjustment);
