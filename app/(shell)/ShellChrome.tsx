@@ -60,7 +60,7 @@ function SidebarContent({ agent, wallet, onNavigate }: { agent: ShellAgent; wall
             FNG<span style={{ color: "#10B981" }}>PAY</span>
           </div>
           <div style={{ fontSize: 8, color: "#9CA3AF", marginTop: -2, letterSpacing: "0.08em" }}>
-            P2P PARTNER PANEL
+            ADMIN PANEL
           </div>
         </div>
       </div>
@@ -72,21 +72,14 @@ function SidebarContent({ agent, wallet, onNavigate }: { agent: ShellAgent; wall
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ash-400)", marginTop: 2 }}>{wallet.fixedRateLabel}</div>
       </div>
 
-      <div className="sec-label">Panel</div>
+      <div className="sec-label">Admin</div>
 
-      {NAV.map((n) => {
-        // Hide admin link for non-admin users
-        if (n.href === '/admin' && agent.agentCode !== 'PV-ADMIN1' && agent.agentCode !== 'PV-ADMIN') {
-          return null;
-        }
-
-        return (
-          <Link key={n.label} href={n.href} className={`nav-link${pathname === n.href ? " active" : ""}`} onClick={onNavigate}>
-            <Icon name={n.icon} strokeWidth={1.4} />
-            {n.label}
-          </Link>
-        );
-      })}
+      {NAV.map((n) => (
+        <Link key={n.label} href={n.href} className={`nav-link${pathname === n.href ? " active" : ""}`} onClick={onNavigate}>
+          <Icon name={n.icon} strokeWidth={1.4} />
+          {n.label}
+        </Link>
+      ))}
 
       <div style={{ marginTop: 8, borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 8 }}>
         <div role="button" className="nav-link" onClick={logout} style={{ cursor: "pointer" }}>
@@ -99,7 +92,7 @@ function SidebarContent({ agent, wallet, onNavigate }: { agent: ShellAgent; wall
         <div className="av">{initialsOf(agent.fullName)}</div>
         <div className="um">
           <div className="un">{agent.fullName}</div>
-          <div className="ul">Partner · Agent {agent.agentCode}</div>
+          <div className="ul">Admin · {agent.agentCode}</div>
         </div>
       </div>
     </div>
@@ -155,7 +148,7 @@ export function ShellChrome({ agent, wallet, children }: { agent: ShellAgent; wa
           <div className="pv-content" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "14px 16px 24px" }}>
             <div className="pv-inner">
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--moss-600)", marginBottom: 6 }}>
-                Partner panel
+                Admin panel
               </div>
               {children}
             </div>
