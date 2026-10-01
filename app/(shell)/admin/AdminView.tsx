@@ -194,7 +194,7 @@ export function AdminView({ admin }: { admin: Agent }) {
 
     // Validate total matches
     const total = amounts.reduce((sum, a) => sum + a, 0);
-    const original = parseFloat(splittingWithdrawal.amountUsdt);
+    const original = parseFloat(splittingWithdrawal.amountUsdt.replace(/[^0-9.-]/g, ''));
     if (Math.abs(total - original) > 0.01) {
       alert(`Split total (${total.toFixed(2)}) must equal original amount (${original.toFixed(2)})`);
       return;
@@ -624,7 +624,7 @@ export function AdminView({ admin }: { admin: Agent }) {
               {(() => {
                 const amounts = splitAmounts.map(a => parseFloat(a)).filter(a => !isNaN(a) && a > 0);
                 const total = amounts.reduce((sum, a) => sum + a, 0);
-                const original = parseFloat(splittingWithdrawal.amountUsdt);
+                const original = parseFloat(splittingWithdrawal.amountUsdt.replace(/[^0-9.-]/g, ''));
                 const diff = total - original;
 
                 return (
