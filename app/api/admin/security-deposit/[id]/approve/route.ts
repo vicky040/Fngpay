@@ -61,7 +61,7 @@ export async function POST(
 
     // Check if wallet exists, if not create it
     const walletCheck = await client.query(
-      'SELECT id, balance_usdt FROM wallets WHERE agent_id = $1',
+      'SELECT agent_id, balance_usdt FROM wallets WHERE agent_id = $1',
       [userId]
     );
 
