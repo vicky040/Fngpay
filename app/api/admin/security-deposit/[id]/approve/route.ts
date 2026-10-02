@@ -18,7 +18,13 @@ export async function POST(
 
     // Get user details
     const userResult = await client.query(
-      `SELECT a.id, a.agent_code, a.full_name, a.security_deposit_completed, w.balance_usdt
+      `SELECT
+        a.id,
+        a.agent_code,
+        a.full_name,
+        a.security_deposit_completed,
+        COALESCE(a.security_deposit_amount, 2000) as security_deposit_amount,
+        COALESCE(w.balance_usdt, 0) as balance_usdt
        FROM agents a
        LEFT JOIN wallets w ON w.agent_id = a.id
        WHERE a.id = $1`,
@@ -44,15 +50,12 @@ export async function POST(
       );
     }
 
-    // Check if user has sufficient balance (>= 2000 USDT)
-    const balance = parseFloat(user.balance_usdt || '0');
-    if (balance < 2000) {
-      await client.query('ROLLBACK');
-      return NextResponse.json(
-        { error: `Insufficient balance. User has ${balance} USDT, needs 2000 USDT.` },
-        { status: 400 }
-      );
-    }
+    // Security deposit can be approved by admin regardless of balance
+    // Admin has verified payment through other means (bank transfer, crypto transaction, etc.)
+    console.log(`Admin approving security deposit for ${user.agent_code}:`, {
+      depositAmount: user.security_deposit_amount,
+      currentBalance: user.balance_usdt
+    });
 
     // Approve security deposit
     await client.query(

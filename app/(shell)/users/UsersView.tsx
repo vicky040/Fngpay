@@ -93,6 +93,29 @@ export function UsersView({ admin }: { admin: Admin }) {
     }
   }
 
+  async function approveSecurityDeposit(user: User) {
+    if (!confirm(`Approve security deposit for ${user.agentCode}?\n\nThis will mark their ${user.securityDepositAmount} USDT security deposit as completed.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/security-deposit/${user.id}/approve`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Failed to approve");
+      }
+
+      alert(`✅ Security deposit approved for ${user.agentCode}! User can now access full features.`);
+      closeEditModal();
+      loadUsers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to approve security deposit");
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "40px", color: "var(--ash-500)" }}>
@@ -375,6 +398,44 @@ export function UsersView({ admin }: { admin: Admin }) {
                 </div>
               </div>
             </div>
+
+            {/* Security Deposit Status */}
+            {!editingUser.securityDepositCompleted && (
+              <div style={{
+                marginTop: "20px",
+                padding: "14px",
+                background: "#FEF3C7",
+                border: "1px solid #FCD34D",
+                borderRadius: "8px"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                  <div>
+                    <div style={{ fontSize: "13px", fontWeight: "600", color: "#92400E", marginBottom: "4px" }}>
+                      ⏳ Security Deposit Pending
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#78350F" }}>
+                      {editingUser.securityDepositAmount.toLocaleString()} USDT needs approval
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => approveSecurityDeposit(editingUser)}
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      background: "#10B981",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    ✓ Approve Now
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
               <button
