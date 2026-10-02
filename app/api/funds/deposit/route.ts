@@ -16,13 +16,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const amountInr = Number(body.amountInr);
+  const amountUsdt = Number(body.amountUsdt);
   const isSecurityDeposit = body.isSecurityDeposit === true;
 
-  // Security deposit: 2,000 USDT (₹2,08,000)
-  // Regular deposit: Minimum 500 USDT (₹52,000)
-  const SECURITY_DEPOSIT_INR = 208000; // ₹2.08 lakhs
-  const MIN_DEPOSIT_INR = 52000; // ₹52,000
+  // Security deposit: Exactly 2,000 USDT
+  // Regular deposit: Minimum 500 USDT
+  const SECURITY_DEPOSIT_USDT = 2000;
+  const MIN_DEPOSIT_USDT = 500;
 
   // Check security deposit status for regular deposits
   if (!isSecurityDeposit) {
@@ -40,16 +40,16 @@ export async function POST(request: Request) {
 
   if (isSecurityDeposit) {
     // Security deposit must be exactly 2,000 USDT
-    if (amountInr !== SECURITY_DEPOSIT_INR) {
+    if (amountUsdt !== SECURITY_DEPOSIT_USDT) {
       return NextResponse.json({
-        error: `Security deposit must be exactly ₹${SECURITY_DEPOSIT_INR.toLocaleString('en-IN')} (2,000 USDT at 104 INR/USDT).`
+        error: `Security deposit must be exactly ${SECURITY_DEPOSIT_USDT} USDT.`
       }, { status: 400 });
     }
   } else {
     // Regular deposits must be at least 500 USDT
-    if (!Number.isFinite(amountInr) || amountInr < MIN_DEPOSIT_INR) {
+    if (!Number.isFinite(amountUsdt) || amountUsdt < MIN_DEPOSIT_USDT) {
       return NextResponse.json({
-        error: `Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (500 USDT at 104 INR/USDT).`
+        error: `Minimum deposit is ${MIN_DEPOSIT_USDT} USDT.`
       }, { status: 400 });
     }
   }
@@ -60,8 +60,8 @@ export async function POST(request: Request) {
   let payment;
   try {
     payment = await createPayment({
-      priceAmount: amountInr,
-      priceCurrency: "inr",
+      priceAmount: amountUsdt,
+      priceCurrency: "usdttrc20", // Send USDT directly - no conversion, exact amount
       orderId,
       orderDescription: `Add funds — ${auth.agent.agentCode}`,
       ipnCallbackUrl: `${origin}/api/funds/webhook`,

@@ -99,13 +99,13 @@ export function FundsView() {
   async function submitAmount(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    const amountInr = Number(amount);
+    const amountUsdt = Number(amount);
 
-    // Minimum deposit: 500 USDT (at 104 INR/USDT = ₹52,000)
-    const MIN_DEPOSIT_INR = 52000;
+    // Minimum deposit: 500 USDT
+    const MIN_DEPOSIT_USDT = 500;
 
-    if (!Number.isFinite(amountInr) || amountInr < MIN_DEPOSIT_INR) {
-      setFormError(`Minimum deposit is ₹${MIN_DEPOSIT_INR.toLocaleString('en-IN')} (500 USDT at 104 INR/USDT).`);
+    if (!Number.isFinite(amountUsdt) || amountUsdt < MIN_DEPOSIT_USDT) {
+      setFormError(`Minimum deposit is ${MIN_DEPOSIT_USDT} USDT.`);
       return;
     }
     setSubmitting(true);
@@ -113,7 +113,7 @@ export function FundsView() {
       const res = await fetch("/api/funds/deposit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountInr }),
+        body: JSON.stringify({ amountUsdt }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -151,14 +151,14 @@ export function FundsView() {
     setFormError(null);
     setSubmitting(true);
 
-    // 2,000 USDT at 104 INR/USDT = ₹2,08,000
-    const securityDepositInr = 208000;
+    // Exactly 2,000 USDT
+    const securityDepositUsdt = 2000;
 
     try {
       const res = await fetch("/api/funds/deposit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountInr: securityDepositInr, isSecurityDeposit: true }),
+        body: JSON.stringify({ amountUsdt: securityDepositUsdt, isSecurityDeposit: true }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -217,14 +217,14 @@ export function FundsView() {
           onSubmit={submitAmount}
           style={{ background: "var(--paper)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 14, marginTop: 12 }}
         >
-          <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-900)" }}>Enter amount (INR)</div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-900)" }}>Enter amount (USDT)</div>
           <input
             type="number"
-            min={52000}
+            min={500}
             step="1"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="Minimum ₹52,000 (500 USDT)"
+            placeholder="Minimum 500 USDT"
             style={{
               marginTop: 10,
               width: "100%",
