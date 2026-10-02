@@ -57,6 +57,52 @@ export async function POST(
       currentBalance: user.balance_usdt
     });
 
+    const depositAmount = parseFloat(user.security_deposit_amount || '2000');
+
+    // Check if wallet exists, if not create it
+    const walletCheck = await client.query(
+      'SELECT id, balance_usdt FROM wallets WHERE agent_id = $1',
+      [userId]
+    );
+
+    if (walletCheck.rows.length === 0) {
+      // Create wallet with security deposit amount
+      await client.query(
+        'INSERT INTO wallets (agent_id, balance_usdt, balance_inr) VALUES ($1, $2, 0)',
+        [userId, depositAmount]
+      );
+    } else {
+      // Add security deposit amount to existing balance
+      const currentBalance = parseFloat(walletCheck.rows[0].balance_usdt || '0');
+      const newBalance = currentBalance + depositAmount;
+
+      await client.query(
+        'UPDATE wallets SET balance_usdt = $1 WHERE agent_id = $2',
+        [newBalance, userId]
+      );
+    }
+
+    // Create wallet entry for security deposit credit
+    await client.query(
+      `INSERT INTO wallet_entries (
+        agent_id,
+        kind,
+        entry_type,
+        sub,
+        occurred_at,
+        amount,
+        balance
+      ) VALUES ($1, $2, $3, $4, NOW(), $5, $6)`,
+      [
+        userId,
+        'ADJUSTMENT',
+        'Admin Adjustment',
+        `Security Deposit Approved by ${auth.admin.agentCode}`,
+        `+${depositAmount.toFixed(2)} USDT`,
+        `Bal ${depositAmount.toFixed(2)} USDT`
+      ]
+    );
+
     // Approve security deposit
     await client.query(
       'UPDATE agents SET security_deposit_completed = true WHERE id = $1',
