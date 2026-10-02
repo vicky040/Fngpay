@@ -107,10 +107,59 @@ export async function GET() {
       pendingCount = 0;
     }
 
+    // Get pending security deposits (users with balance >= 2000 but not approved yet)
+    let pendingDeposits: Array<{
+      id: number;
+      agentCode: string;
+      agentName: string;
+      email: string;
+      balanceUsdt: string;
+      createdAt: string;
+    }> = [];
+
+    try {
+      const depositsResult = await pool.query<{
+        id: number;
+        agent_code: string;
+        full_name: string;
+        email: string;
+        balance_usdt: string;
+        created_at: Date;
+      }>(
+        `SELECT
+          a.id,
+          a.agent_code,
+          a.full_name,
+          a.email,
+          COALESCE(w.balance_usdt, 0) as balance_usdt,
+          a.created_at
+        FROM agents a
+        LEFT JOIN wallets w ON w.agent_id = a.id
+        WHERE a.security_deposit_completed = false
+          AND COALESCE(w.balance_usdt, 0) >= 2000
+          AND a.agent_code NOT IN ('PV-ADMIN', 'PV-ADMIN1')
+        ORDER BY a.created_at ASC`
+      );
+
+      pendingDeposits = depositsResult.rows.map((d) => ({
+        id: d.id,
+        agentCode: d.agent_code,
+        agentName: d.full_name,
+        email: d.email,
+        balanceUsdt: Number(d.balance_usdt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        createdAt: formatEntryDateTime(new Date(d.created_at)),
+      }));
+    } catch (e) {
+      console.log('Error fetching pending deposits:', e);
+      pendingDeposits = [];
+    }
+
     return NextResponse.json({
       currentRate,
       pendingCount,
       withdrawals,
+      pendingDeposits,
+      pendingDepositsCount: pendingDeposits.length,
     });
   } catch (error) {
     console.error('Admin dashboard error:', error);

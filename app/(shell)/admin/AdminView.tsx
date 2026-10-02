@@ -25,10 +25,21 @@ type WithdrawalRequest = {
   rejectionReason?: string;
 };
 
+type PendingDeposit = {
+  id: number;
+  agentCode: string;
+  agentName: string;
+  email: string;
+  balanceUsdt: string;
+  createdAt: string;
+};
+
 type AdminData = {
   currentRate: string;
   pendingCount: number;
   withdrawals: WithdrawalRequest[];
+  pendingDeposits: PendingDeposit[];
+  pendingDepositsCount: number;
 };
 
 export function AdminView({ admin }: { admin: Agent }) {
@@ -223,6 +234,26 @@ export function AdminView({ admin }: { admin: Agent }) {
     }
   }
 
+  async function approveSecurityDeposit(userId: number, agentCode: string) {
+    if (!confirm(`Approve security deposit for ${agentCode}?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/security-deposit/${userId}/approve`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Failed to approve");
+      }
+
+      alert(`✅ Security deposit approved for ${agentCode}! User can now access full features.`);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to approve security deposit");
+    }
+  }
+
   const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     pending: { label: "🟡 Pending", color: "#f59e0b" },
     approved: { label: "🔵 Approved", color: "#3b82f6" },
@@ -298,6 +329,75 @@ export function AdminView({ admin }: { admin: Agent }) {
           </div>
         </form>
       </div>
+
+      {/* Pending Security Deposits */}
+      {data.pendingDepositsCount > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink-900)" }}>Pending Security Deposits</div>
+              <div style={{ fontSize: 13, color: "var(--ash-600)", marginTop: 2 }}>
+                {data.pendingDepositsCount} user{data.pendingDepositsCount !== 1 ? "s" : ""} waiting for approval
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {data.pendingDeposits.map((deposit) => (
+              <div
+                key={deposit.id}
+                style={{
+                  background: "var(--paper)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--r-lg)",
+                  padding: 16,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "var(--ink-900)", marginBottom: 4 }}>
+                      {deposit.agentName}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginBottom: 2 }}>
+                      {deposit.agentCode}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--ash-600)" }}>
+                      {deposit.email}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--ash-500)", marginTop: 4 }}>
+                      Registered: {deposit.createdAt}
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 11, color: "var(--ash-500)", marginBottom: 2 }}>Current Balance</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 600, color: "var(--moss-600)" }}>
+                      {deposit.balanceUsdt} USDT
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => approveSecurityDeposit(deposit.id, deposit.agentCode)}
+                    style={{
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      background: "var(--moss-500)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ✓ Approve Deposit
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Withdrawal Requests */}
       <div style={{ marginTop: 24 }}>
