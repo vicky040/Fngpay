@@ -12,11 +12,7 @@ Start by linking your account at our platform.
 For support, contact: @fngpayofficial`;
 
 // The correct bot about/bio section (shown in Bot Info)
-const CORRECT_ABOUT = `FNGPay P2P Partner Panel
-
-Manage your USDT deposits, withdrawals, and earnings through Telegram.
-
-For support: @fngpayofficial`;
+const CORRECT_ABOUT = `FNGPay - P2P USDT Payment Panel. Manage deposits & withdrawals. Support: @fngpayofficial`;
 
 function apiUrl(method: string): string {
   return `https://api.telegram.org/bot${BOT_TOKEN}/${method}`;
