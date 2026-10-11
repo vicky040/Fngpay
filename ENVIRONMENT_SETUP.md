@@ -7,7 +7,7 @@ You need to add the following environment variables to your Vercel project:
 ### 1. **Telegram Bot Credentials** (REQUIRED)
 
 ```env
-TELEGRAM_BOT_TOKEN=8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q
+TELEGRAM_BOT_TOKEN=8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q
 TELEGRAM_BOT_USERNAME=Fngpay_official_bot
 ```
 
@@ -19,7 +19,7 @@ TELEGRAM_BOT_USERNAME=Fngpay_official_bot
 1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
 2. Add each variable:
    - Variable name: `TELEGRAM_BOT_TOKEN`
-   - Value: `8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q`
+   - Value: `8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q`
    - Environment: Production, Preview, Development (select all)
 3. Repeat for `TELEGRAM_BOT_USERNAME`
 
@@ -63,7 +63,7 @@ NEXT_PUBLIC_BASE_URL=https://fngpay.vercel.app
    
    **Variable 1:**
    - Name: `TELEGRAM_BOT_TOKEN`
-   - Value: `8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q`
+   - Value: `8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q`
    - Environments: ✅ Production ✅ Preview ✅ Development
    - Click "Save"
 
@@ -94,7 +94,7 @@ Once deployed, register the webhook:
 
 **Open this URL in your browser:**
 ```
-https://api.telegram.org/bot8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q/setWebhook?url=https://fngpay.vercel.app/api/telegram/webhook
+https://api.telegram.org/bot8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q/setWebhook?url=https://fngpay.vercel.app/api/telegram/webhook
 ```
 
 **Expected response:**
@@ -106,7 +106,7 @@ https://api.telegram.org/bot8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q/setWeb
 
 **Check webhook status:**
 ```
-https://api.telegram.org/bot8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q/getWebhookInfo
+https://api.telegram.org/bot8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q/getWebhookInfo
 ```
 
 **Should show:**
@@ -190,7 +190,7 @@ const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME; // ✅ Environment varia
 **Check 3: Webhook registered?**
 ```
 # Open in browser:
-https://api.telegram.org/bot8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q/getWebhookInfo
+https://api.telegram.org/bot8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q/getWebhookInfo
 ```
 
 ### Webhook errors
@@ -198,10 +198,10 @@ https://api.telegram.org/bot8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q/getWeb
 **Solution: Delete and re-register webhook**
 ```
 # Step 1: Delete webhook
-https://api.telegram.org/bot8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q/deleteWebhook
+https://api.telegram.org/bot8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q/deleteWebhook
 
 # Step 2: Set webhook again
-https://api.telegram.org/bot8799087137:AAFe-MwkBuD1hLnC7r0D0n0m1ZLy8qyk1q/setWebhook?url=https://fngpay.vercel.app/api/telegram/webhook
+https://api.telegram.org/bot8799087197:AA4eYmWkBuU1jm1Co7LH9Dn10m2LZLy8qyk1q/setWebhook?url=https://fngpay.vercel.app/api/telegram/webhook
 ```
 
 ### Wrong bot showing in app
