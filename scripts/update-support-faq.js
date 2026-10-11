@@ -31,7 +31,7 @@ async function updateSupportFAQ() {
     console.log('🔧 Updating FAQ...');
 
     // Update FAQ
-    const newAnswer = 'Visit our website at fngpay.com, join our Telegram group at t.me/+RpX8P-Z2eJ40MzQ1, or message @fngpay_bot on Telegram for instant support.';
+    const newAnswer = 'Visit our website at fngpay.com, join our Telegram group at t.me/+RpX8P-Z2eJ40MzQ1, or message @Fngpay_official_bot on Telegram for instant support.';
 
     await client.query(`
       UPDATE faqs
@@ -51,7 +51,7 @@ async function updateSupportFAQ() {
     console.log('Users will now see:');
     console.log('  - Website: fngpay.com');
     console.log('  - Telegram Group: t.me/+RpX8P-Z2eJ40MzQ1');
-    console.log('  - Telegram Bot: @fngpay_bot');
+    console.log('  - Telegram Bot: @Fngpay_official_bot');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   } catch (error) {

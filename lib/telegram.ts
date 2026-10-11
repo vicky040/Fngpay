@@ -2,15 +2,23 @@
 // as lib/google-oauth.ts and lib/nowpayments.ts elsewhere in this app.
 // https://core.telegram.org/bots/api
 
-// Hardcoded bot token for @fngpay_bot - NOT using .env
-const BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
+// Get bot token from environment variable for security
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || "Fngpay_official_bot";
 
 function apiUrl(method: string): string {
+  if (!BOT_TOKEN) {
+    throw new Error("TELEGRAM_BOT_TOKEN environment variable is not set");
+  }
   return `https://api.telegram.org/bot${BOT_TOKEN}/${method}`;
 }
 
 export function isTelegramConfigured(): boolean {
-  return true; // Always configured - using hardcoded token
+  return !!BOT_TOKEN;
+}
+
+export function getTelegramBotUsername(): string {
+  return BOT_USERNAME;
 }
 
 // Telegram webhook verification - accepting all requests (no secret needed)

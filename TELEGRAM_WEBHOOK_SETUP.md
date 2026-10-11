@@ -1,19 +1,28 @@
 # Telegram Bot Webhook Setup
 
 Your bot is configured with:
-- **Bot Username:** @fngpay_bot
-- **Bot Token:** `8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw`
+- **Bot Username:** @Fngpay_official_bot
+- **Bot Token:** Stored in `TELEGRAM_BOT_TOKEN` environment variable
+
+## Environment Variables
+
+Before setting up the webhook, ensure you have set the following environment variables in Vercel:
+
+```env
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_BOT_USERNAME=Fngpay_official_bot
+```
 
 ## Setup Webhook URL
 
-After deploying to Vercel, you need to register the webhook URL with Telegram.
+After deploying to Vercel and setting environment variables, you need to register the webhook URL with Telegram.
 
 ### Method 1: Using Browser (Easiest)
 
-Open this URL in your browser (replace with your actual bot token if different):
+Open this URL in your browser (replace `YOUR_BOT_TOKEN` with your actual token):
 
 ```
-https://api.telegram.org/bot8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw/setWebhook?url=https://fngpay.vercel.app/api/telegram/webhook
+https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook?url=https://fngpay.vercel.app/api/telegram/webhook
 ```
 
 You should see:
@@ -24,7 +33,7 @@ You should see:
 ### Method 2: Using curl
 
 ```bash
-curl -X POST "https://api.telegram.org/bot8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw/setWebhook" \
+curl -X POST "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{"url":"https://fngpay.vercel.app/api/telegram/webhook"}'
 ```
@@ -34,7 +43,7 @@ curl -X POST "https://api.telegram.org/bot8531306572:AAGf0x98EPcYfzr2pia6_eR8WQn
 Check if webhook is set correctly:
 
 ```
-https://api.telegram.org/bot8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw/getWebhookInfo
+https://api.telegram.org/botYOUR_BOT_TOKEN/getWebhookInfo
 ```
 
 Should show:
@@ -51,7 +60,7 @@ Should show:
 
 ## Testing
 
-1. Open Telegram and search for `@fngpay_bot`
+1. Open Telegram and search for `@Fngpay_official_bot`
 2. Send `/start` to the bot
 3. Bot should respond with welcome message and payment instructions
 
@@ -60,18 +69,19 @@ Should show:
 ### Bot doesn't respond
 - Check webhook is set: `getWebhookInfo`
 - Check Vercel deployment logs for errors
+- Verify `TELEGRAM_BOT_TOKEN` environment variable is set correctly
 - Test the webhook URL directly in browser: `https://fngpay.vercel.app/api/telegram/webhook`
 
 ### Webhook errors
 - Clear webhook and set again:
   ```
-  https://api.telegram.org/bot8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw/deleteWebhook
+  https://api.telegram.org/botYOUR_BOT_TOKEN/deleteWebhook
   ```
 - Then set webhook again using Method 1
 
 ## Important Notes
 
-✅ **Bot credentials are hardcoded** - no .env needed
+✅ **Bot credentials are in environment variables** - secure and not exposed in code
 ✅ **Webhook URL is fixed** - points to your Vercel deployment
 ✅ **No secret validation** - all webhook requests accepted (production ready)
 

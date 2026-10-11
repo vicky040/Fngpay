@@ -39,7 +39,7 @@ export default function HelpPage() {
           </div>
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 12, color: "var(--ash-500)" }}>FNGPAY Telegram Bot</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@fngpay_bot</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--moss-600)", marginTop: 2 }}>@Fngpay_official_bot</div>
           </div>
         </Card>
 

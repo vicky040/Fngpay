@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
 // The correct bot description we want to maintain
 const CORRECT_DESCRIPTION = `Welcome to FNGPay P2P Partner Panel

@@ -1,7 +1,10 @@
 /**
  * Manually fix the last payment that didn't receive an agent code
  * Run: node scripts/fix-last-payment.js
+ * Requires: TELEGRAM_BOT_TOKEN and DATABASE_URL environment variables
  */
+
+require('dotenv').config();
 
 const { Pool } = require('pg');
 
@@ -9,8 +12,14 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_za7tkm6KulOX@ep-falling-sea-auzw7sij-pooler.c-10.us-east-1.aws.neon.tech/neondb?sslmode=require',
 });
 
-const BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+if (!BOT_TOKEN) {
+  console.error('❌ Error: TELEGRAM_BOT_TOKEN environment variable is not set');
+  console.log('Please add TELEGRAM_BOT_TOKEN to your .env file');
+  process.exit(1);
+}
 
 async function sendTelegramMessage(chatId, text) {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;

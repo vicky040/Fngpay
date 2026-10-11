@@ -1,9 +1,18 @@
 /**
  * Fix Telegram bot bio/description
  * Run: node scripts/fix-bot-bio.js
+ * Requires: TELEGRAM_BOT_TOKEN environment variable
  */
 
-const BOT_TOKEN = "8531306572:AAGf0x98EPcYfzr2pia6_eR8WQnzK0YP7bw";
+require('dotenv').config();
+
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+if (!BOT_TOKEN) {
+  console.error('❌ Error: TELEGRAM_BOT_TOKEN environment variable is not set');
+  console.log('Please add TELEGRAM_BOT_TOKEN to your .env file');
+  process.exit(1);
+}
 
 const CORRECT_DESCRIPTION = `Welcome to FNGPay P2P Partner Panel
 
