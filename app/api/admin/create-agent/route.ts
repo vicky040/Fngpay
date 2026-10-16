@@ -199,8 +199,8 @@ export async function POST(request: Request) {
 
       // Create wallet
       await client.query(
-        `INSERT INTO wallets (agent_id, balance_usdt, fixed_rate_inr, balance_inr, today_payin_inr, today_payout_inr, today_earning_inr)
-        VALUES ($1, $2, 104, 0, 0, 0, 0)`,
+        `INSERT INTO wallets (agent_id, balance_usdt, fixed_rate_inr, today_payin_inr, today_payout_inr, today_earning_inr)
+        VALUES ($1, $2, 104, 0, 0, 0)`,
         [agentId, currentBalance.toFixed(2)]
       );
 
