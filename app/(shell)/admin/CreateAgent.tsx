@@ -146,7 +146,7 @@ export function CreateAgent() {
           {result.success ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <Icon name="check" size={18} />
+                <Icon name="check" width={18} height={18} />
                 <strong style={{ fontSize: 14 }}>Agent Created Successfully!</strong>
               </div>
               <p style={{ margin: "4px 0", fontSize: 13 }}>
@@ -159,7 +159,7 @@ export function CreateAgent() {
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <Icon name="close" size={18} />
+                <Icon name="close" width={18} height={18} />
                 <strong style={{ fontSize: 14 }}>Error</strong>
               </div>
               <p style={{ margin: 0, fontSize: 13 }}>{result.error}</p>

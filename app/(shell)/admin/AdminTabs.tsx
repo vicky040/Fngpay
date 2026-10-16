@@ -62,7 +62,7 @@ export function AdminTabs({ admin }: { admin: Agent }) {
                 transition: "all 0.2s",
               }}
             >
-              <Icon name={tab.icon as any} size={18} />
+              <Icon name={tab.icon as any} width={18} height={18} />
               {tab.label}
             </button>
           );
