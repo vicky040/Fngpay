@@ -28,6 +28,13 @@ async function generateAgentCode() {
   }
 }
 
+type Transaction = {
+  type: "payin" | "payout" | "commission";
+  amount: string;
+  date: string;
+  description?: string;
+};
+
 export async function POST(request: Request) {
   const auth = await requireApiAdmin();
   if ("error" in auth) return auth.error;
@@ -41,9 +48,7 @@ export async function POST(request: Request) {
       telegramId,
       password,
       securityDepositAmount,
-      initialPayin,
-      initialPayout,
-      transactionDate,
+      transactions = [],
     } = body;
 
     // Validate required fields
@@ -74,12 +79,9 @@ export async function POST(request: Request) {
 
     // Validate amounts
     const securityDeposit = parseFloat(securityDepositAmount) || 0;
-    const payin = parseFloat(initialPayin) || 0;
-    const payout = parseFloat(initialPayout) || 0;
-
-    if (securityDeposit < 0 || payin < 0 || payout < 0) {
+    if (securityDeposit < 0) {
       return NextResponse.json(
-        { error: "Amounts cannot be negative" },
+        { error: "Security deposit cannot be negative" },
         { status: 400 }
       );
     }
@@ -122,65 +124,93 @@ export async function POST(request: Request) {
           mobile,
           telegramId || null,
           passwordHash,
-          securityDeposit > 0, // Mark as completed if deposit provided
+          securityDeposit > 0,
           securityDeposit.toFixed(2),
-          false, // Two-factor disabled by default
+          false,
         ]
       );
 
       const agentId = agentResult.rows[0].id;
 
-      // Calculate initial balance
-      const initialBalance = securityDeposit + payin - payout;
+      // Calculate initial balance from transactions
+      let currentBalance = securityDeposit;
+      const walletEntries: Array<{
+        kind: string;
+        type: string;
+        sub: string;
+        amount: string;
+        balance: string;
+        date: Date;
+      }> = [];
+
+      // Add security deposit entry if > 0
+      if (securityDeposit > 0) {
+        walletEntries.push({
+          kind: "DEPOSIT",
+          type: "Admin Adjustment",
+          sub: `Security Deposit - Created by ${auth.admin.agentCode}`,
+          amount: `+${securityDeposit.toFixed(2)} USDT`,
+          balance: `Bal ${currentBalance.toFixed(2)} USDT`,
+          date: new Date(),
+        });
+      }
+
+      // Process transactions in chronological order
+      const sortedTransactions = (transactions as Transaction[])
+        .filter((tx) => parseFloat(tx.amount) > 0)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      for (const tx of sortedTransactions) {
+        const txAmount = parseFloat(tx.amount);
+
+        let kind: string;
+        let entryType: string;
+        let sign: string;
+
+        if (tx.type === "payout") {
+          kind = "WITHDRAWAL";
+          entryType = "Withdrawals";
+          sign = "-";
+          currentBalance -= txAmount;
+        } else if (tx.type === "commission") {
+          kind = "ADJUSTMENT";
+          entryType = "Commission";
+          sign = "+";
+          currentBalance += txAmount;
+        } else {
+          // payin
+          kind = "DEPOSIT";
+          entryType = "Deposits";
+          sign = "+";
+          currentBalance += txAmount;
+        }
+
+        const description = tx.description || `${tx.type} transaction`;
+
+        walletEntries.push({
+          kind,
+          type: entryType,
+          sub: `${description} - Created by ${auth.admin.agentCode}`,
+          amount: `${sign}${txAmount.toFixed(2)} USDT`,
+          balance: `Bal ${currentBalance.toFixed(2)} USDT`,
+          date: new Date(tx.date),
+        });
+      }
 
       // Create wallet
       await client.query(
         `INSERT INTO wallets (agent_id, balance_usdt, fixed_rate_inr, balance_inr, today_payin_inr, today_payout_inr, today_earning_inr)
         VALUES ($1, $2, 104, 0, 0, 0, 0)`,
-        [agentId, initialBalance.toFixed(2)]
+        [agentId, currentBalance.toFixed(2)]
       );
 
       // Create wallet entries
-      const txDate = transactionDate ? new Date(transactionDate) : new Date();
-      const entries = [];
-
-      if (securityDeposit > 0) {
-        entries.push({
-          kind: "DEPOSIT",
-          type: "Admin Adjustment",
-          sub: `Security Deposit - Created by ${auth.admin.agentCode}`,
-          amount: `+${securityDeposit.toFixed(2)} USDT`,
-          balance: `Bal ${securityDeposit.toFixed(2)} USDT`,
-        });
-      }
-
-      if (payin > 0) {
-        const currentBal = securityDeposit + payin;
-        entries.push({
-          kind: "DEPOSIT",
-          type: "Deposits",
-          sub: `Initial Payin - Created by ${auth.admin.agentCode}`,
-          amount: `+${payin.toFixed(2)} USDT`,
-          balance: `Bal ${currentBal.toFixed(2)} USDT`,
-        });
-      }
-
-      if (payout > 0) {
-        entries.push({
-          kind: "WITHDRAWAL",
-          type: "Withdrawals",
-          sub: `Initial Payout - Created by ${auth.admin.agentCode}`,
-          amount: `-${payout.toFixed(2)} USDT`,
-          balance: `Bal ${initialBalance.toFixed(2)} USDT`,
-        });
-      }
-
-      for (const entry of entries) {
+      for (const entry of walletEntries) {
         await client.query(
           `INSERT INTO wallet_entries (
             agent_id, kind, entry_type, sub, occurred_at, amount, balance
           ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [agentId, entry.kind, entry.type, entry.sub, txDate, entry.amount, entry.balance]
+          [agentId, entry.kind, entry.type, entry.sub, entry.date, entry.amount, entry.balance]
         );
       }
 
@@ -190,8 +220,9 @@ export async function POST(request: Request) {
         success: true,
         agentCode,
         agentId,
-        initialBalance: initialBalance.toFixed(2),
-        message: `Agent ${agentCode} created successfully`,
+        initialBalance: currentBalance.toFixed(2),
+        transactionsCreated: walletEntries.length,
+        message: `Agent ${agentCode} created with ${walletEntries.length} transactions`,
       });
     } catch (error) {
       await client.query("ROLLBACK");
